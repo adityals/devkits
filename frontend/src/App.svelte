@@ -3,6 +3,4 @@
     import routes from "./routes";
 </script>
 
-<a href="#/not-found">Not Found</a>
-
 <Router {routes} />

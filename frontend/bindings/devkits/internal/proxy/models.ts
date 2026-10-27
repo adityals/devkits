@@ -4,4 +4,5 @@
 export interface ProxyStatus {
     "running": boolean;
     "error"?: string;
+    "address": string;
 }

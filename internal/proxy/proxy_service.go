@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"sync"
 
 	prox "github.com/lqqyt2423/go-mitmproxy/proxy"
@@ -11,6 +13,7 @@ import (
 type ProxyStatus struct {
 	Running bool   `json:"running"`
 	Error   string `json:"error,omitempty"`
+	Addr    string `json:"address"`
 }
 
 type proxyService struct {
@@ -68,6 +71,7 @@ func (ps *proxyService) Start() error {
 	ps.prox = p
 	ps.eventManager.Emit("proxy:status", ProxyStatus{
 		Running: true,
+		Addr:    ps.addr,
 	})
 	ps.mu.Unlock()
 
@@ -81,9 +85,13 @@ func (ps *proxyService) Start() error {
 		ps.mu.Unlock()
 
 		if err != nil {
+			errMsg := ""
+			if !errors.Is(err, http.ErrServerClosed) {
+				errMsg = err.Error()
+			}
 			ps.eventManager.Emit("proxy:status", ProxyStatus{
 				Running: false,
-				Error:   err.Error(),
+				Error:   errMsg,
 			})
 		}
 	}()
