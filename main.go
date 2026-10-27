@@ -3,7 +3,6 @@ package main
 import (
 	"devkits/internal/proxy"
 	"embed"
-
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -21,6 +20,7 @@ func init() {
 	// Register a custom event whose associated data type is string.
 	// This is not required, but the binding generator will pick up registered events
 	// and provide a strongly typed JS/TS API for them.
+	application.RegisterEvent[proxy.ProxyStatus]("proxy:status")
 }
 
 // main function serves as the application's entry point. It initializes the application, creates a window,

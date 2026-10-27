@@ -8,3 +8,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 export function Start(): $CancellablePromise<void> {
     return $Call.ByID(4063892011);
 }
+
+export function Stop(): $CancellablePromise<void> {
+    return $Call.ByID(4178425753);
+}
