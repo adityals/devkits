@@ -10,6 +10,10 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+const (
+	ProxyStatusEventName string = "proxy:status"
+)
+
 type ProxyStatus struct {
 	Running bool   `json:"running"`
 	Error   string `json:"error,omitempty"`
@@ -69,7 +73,7 @@ func (ps *proxyService) Start() error {
 	}
 
 	ps.prox = p
-	ps.eventManager.Emit("proxy:status", ProxyStatus{
+	ps.eventManager.Emit(ProxyStatusEventName, ProxyStatus{
 		Running: true,
 		Addr:    ps.addr,
 	})
@@ -89,7 +93,7 @@ func (ps *proxyService) Start() error {
 			if !errors.Is(err, http.ErrServerClosed) {
 				errMsg = err.Error()
 			}
-			ps.eventManager.Emit("proxy:status", ProxyStatus{
+			ps.eventManager.Emit(ProxyStatusEventName, ProxyStatus{
 				Running: false,
 				Error:   errMsg,
 			})

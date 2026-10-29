@@ -5,7 +5,8 @@
     import {
         Start,
         Stop,
-    } from "../../../bindings/devkits/internal/proxy/proxyservice.js";
+    } from "../../../bindings/devkits/internal/proxy/proxyservice";
+    import { ProxyStatus } from "../../../bindings/events";
 
     let server = $state({ running: false, error: "", address: "" });
 
@@ -24,7 +25,7 @@
     onMount(() => {
         handleStartProxyServer();
 
-        const unsubProxyStatusEvt = Events.On("proxy:status", (status) => {
+        const unsubProxyStatusEvt = Events.On(ProxyStatus, (status) => {
             server.running = status.data.running;
             server.error = status.data.error ?? "";
             server.address = status.data.address;
