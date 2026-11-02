@@ -1,5 +1,5 @@
 <script>
-    import Status from "../modules/proxy/Status.svelte";
+    import Control from "../modules/proxy/Control.svelte";
 </script>
 
-<Status />
+<Control />

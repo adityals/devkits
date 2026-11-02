@@ -23,6 +23,13 @@ DevKits: Wails v3 desktop app. Go backend (`main.go`, `internal/`), Svelte 5 + T
 - Follow Svelte 5 best practices and idiomatic Svelte: runes (`$state`, `$derived`, `$effect`, `$props`), `<script lang="ts">`.
 - Keep components small; move shared logic into `.ts` modules.
 
+### UI Design System (Skeleton)
+- All frontend UI follows Skeleton for Svelte. Reference: https://www.skeleton.dev/llms.txt (Svelte docs under `/docs/svelte/`).
+- Use `@skeletonlabs/skeleton-svelte` components before hand-rolling one (`import { Avatar } from '@skeletonlabs/skeleton-svelte'`, composed parts like `<Avatar.Image />`).
+- Style with Skeleton Tailwind utilities and presets (`btn`, `card`, `input`, `preset-filled`, `preset-tonal`, `preset-outlined`, `preset-filled-primary-500`), not custom CSS.
+- Use theme color tokens (`primary`, `secondary`, `tertiary`, `success`, `warning`, `error`, `surface`) and color pairings (`bg-surface-50-950`, `text-surface-950-50`); never hard-coded hex or raw Tailwind palette colors.
+- Theme is `cerberus`, set with `data-theme` on `<html>` (`frontend/index.html`) and imported in `frontend/src/app.css`. Dark mode uses Tailwind's `dark:` variant.
+
 ### Formatting (Go, TS, Svelte, JS)
 - Use line breaks generously: one element per line in multi-element slice/map/array/object literals, function arguments, and parameter lists, with trailing commas where the language allows.
 - Separate logical blocks with a blank line:
