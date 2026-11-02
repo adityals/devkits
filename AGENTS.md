@@ -2,6 +2,29 @@
 
 DevKits: Wails v3 desktop app. Go backend (`main.go`, `internal/`), Svelte 5 + TypeScript frontend (`frontend/`, pnpm, Vite, Tailwind, Skeleton).
 
+## Directory Layout
+
+The app is split into modules (e.g. `mitm`, `imgcompress`, `jsonstruct`). Use the same module name on both sides.
+
+```
+main.go                         # wiring only: create app, register each module's Services
+internal/
+  <module>/
+    <module>.go                 # Services(deps...) []application.Service + RegisterEvent in init
+    <sub>/                      # one package per concern, e.g. mitm/{proxy,rule,traffic,cert}
+frontend/src/
+  App.svelte                    # Shell + Router
+  routes.ts                     # one route per module: /<module>
+  routes/<Module>Page.svelte    # one page per module, plus NotFound.svelte
+  layout/Shell.svelte           # navigation rail; add one link per module
+  lib/components/               # UI shared across modules
+  modules/<module>/<sub>/       # module components and .svelte.ts logic, mirrors internal/<module>/<sub>
+```
+
+- Modules never import each other. Shared code goes in `lib/` (frontend) or a specifically named `internal/` package once two modules need it; never `utils`/`common`.
+- Prefix event names with the module: `<module>:<sub>:<event>` (e.g. `mitm:traffic:flow`).
+- Moving a Go package changes binding import paths; regenerate bindings and fix imports in the same change.
+
 ## Code Write Practices
 
 ### Go (`*.go`)
