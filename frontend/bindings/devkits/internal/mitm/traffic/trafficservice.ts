@@ -10,25 +10,25 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 export function Capacity(): $CancellablePromise<number> {
-    return $Call.ByID(873193797);
+    return $Call.ByID(1437560983);
 }
 
 export function Clear(): $CancellablePromise<void> {
-    return $Call.ByID(1525679998);
+    return $Call.ByID(1641702348);
 }
 
 export function Get(id: string): $CancellablePromise<$models.Flow> {
-    return $Call.ByID(2811536747, id);
+    return $Call.ByID(149903949, id);
 }
 
 export function List(): $CancellablePromise<$models.Summary[] | null> {
-    return $Call.ByID(3949959989);
+    return $Call.ByID(1218360267);
 }
 
 export function Recording(): $CancellablePromise<boolean> {
-    return $Call.ByID(2087561744);
+    return $Call.ByID(3817670926);
 }
 
 export function SetRecording(on: boolean): $CancellablePromise<void> {
-    return $Call.ByID(3325496282, on);
+    return $Call.ByID(49938152, on);
 }

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ProxyStatusEventName string = "proxy:status"
+	ProxyStatusEventName string = "mitm:proxy:status"
 )
 
 type ProxyStatus struct {

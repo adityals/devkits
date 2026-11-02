@@ -1,8 +1,8 @@
 import wrap from "svelte-spa-router/wrap";
-import Home from "./routes/Home.svelte";
+import MitmPage from "./routes/MitmPage.svelte";
 
 const routes = {
-  "/": Home,
+  "/mitm": MitmPage,
   "*": wrap({ asyncComponent: () => import("./routes/NotFound.svelte") }),
 };
 

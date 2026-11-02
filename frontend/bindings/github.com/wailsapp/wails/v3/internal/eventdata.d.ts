@@ -7,16 +7,16 @@ import type { Events } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import type * as proxy$0 from "../../../../../devkits/internal/proxy/models.js";
+import type * as proxy$0 from "../../../../../devkits/internal/mitm/proxy/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import type * as traffic$0 from "../../../../../devkits/internal/traffic/models.js";
+import type * as traffic$0 from "../../../../../devkits/internal/mitm/traffic/models.js";
 
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
-            "proxy:status": proxy$0.ProxyStatus;
-            "traffic:flow": traffic$0.Summary;
+            "mitm:proxy:status": proxy$0.ProxyStatus;
+            "mitm:traffic:flow": traffic$0.Summary;
         }
     }
 }

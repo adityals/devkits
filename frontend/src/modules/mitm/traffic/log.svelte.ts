@@ -5,9 +5,9 @@ import {
   List,
   Recording,
   SetRecording,
-} from "../../../bindings/devkits/internal/traffic/trafficservice";
-import type { Summary } from "../../../bindings/devkits/internal/traffic";
-import { TrafficFlow } from "../../../bindings/events";
+} from "../../../../bindings/devkits/internal/mitm/traffic/trafficservice";
+import type { Summary } from "../../../../bindings/devkits/internal/mitm/traffic";
+import { MitmTrafficFlow } from "../../../../bindings/events";
 
 export type Row = Summary & {
   host: string;
@@ -31,7 +31,7 @@ export class TrafficLog {
   #maxRows = Infinity;
 
   start(): () => void {
-    const off = Events.On(TrafficFlow, (event) => {
+    const off = Events.On(MitmTrafficFlow, (event) => {
       this.rows = [...this.rows, toRow(event.data)].slice(-this.#maxRows);
     });
 

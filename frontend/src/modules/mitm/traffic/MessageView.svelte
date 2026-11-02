@@ -1,6 +1,6 @@
 <script lang="ts">
-    import CodeBlock from "../../lib/components/CodeBlock.svelte";
-    import type { Message } from "../../../bindings/devkits/internal/traffic";
+    import CodeBlock from "../../../lib/components/CodeBlock.svelte";
+    import type { Message } from "../../../../bindings/devkits/internal/mitm/traffic";
     import { formatBody, headerValue, langFor } from "./content-type";
 
     const { message }: { message: Message } = $props();

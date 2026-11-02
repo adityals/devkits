@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as http$0 from "../../../net/http/models.js";
+import * as http$0 from "../../../../net/http/models.js";
 
 export interface Flow {
     "summary": Summary;

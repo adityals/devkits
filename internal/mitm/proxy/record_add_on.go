@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"devkits/internal/traffic"
+	"devkits/internal/mitm/traffic"
 	"sync"
 	"time"
 

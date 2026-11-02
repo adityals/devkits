@@ -9,12 +9,12 @@ import type {} from "../github.com/wailsapp/wails/v3/internal/eventdata.js";
 import "../github.com/wailsapp/wails/v3/internal/eventcreate.js";
 
 /**
- * Name of the custom event "proxy:status".
+ * Name of the custom event "mitm:proxy:status".
  */
-export const ProxyStatus = "proxy:status";
+export const MitmProxyStatus = "mitm:proxy:status";
 
 /**
- * Name of the custom event "traffic:flow".
+ * Name of the custom event "mitm:traffic:flow".
  */
-export const TrafficFlow = "traffic:flow";
+export const MitmTrafficFlow = "mitm:traffic:flow";
 

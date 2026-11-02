@@ -9,7 +9,7 @@ import (
 const (
 	DefaultCapacity = 500
 	MaxBodySize     = 1 << 20
-	FlowEventName   = "traffic:flow"
+	FlowEventName   = "mitm:traffic:flow"
 )
 
 var ErrNotFound = errors.New("flow not found")

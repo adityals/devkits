@@ -1,6 +1,6 @@
 import beautify from "js-beautify";
-import type { Header } from "../../../bindings/net/http";
-import type { Lang } from "../../lib/components/CodeBlock.svelte";
+import type { Header } from "../../../../bindings/net/http";
+import type { Lang } from "../../../lib/components/CodeBlock.svelte";
 
 const LANGS: Record<string, Lang> = {
   "application/json": "json",

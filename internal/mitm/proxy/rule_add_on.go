@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"devkits/internal/rule"
+	"devkits/internal/mitm/rule"
 	"log/slog"
 	"strconv"
 

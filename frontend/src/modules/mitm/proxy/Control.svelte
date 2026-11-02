@@ -5,8 +5,8 @@
     import {
         Start,
         Stop,
-    } from "../../../bindings/devkits/internal/proxy/proxyservice";
-    import { ProxyStatus } from "../../../bindings/events";
+    } from "../../../../bindings/devkits/internal/mitm/proxy/proxyservice";
+    import { MitmProxyStatus } from "../../../../bindings/events";
 
     let server = $state({ running: false, error: "", address: "" });
 
@@ -25,7 +25,7 @@
     onMount(() => {
         handleStartProxyServer();
 
-        const unsubProxyStatusEvt = Events.On(ProxyStatus, (status) => {
+        const unsubProxyStatusEvt = Events.On(MitmProxyStatus, (status) => {
             server.running = status.data.running;
             server.error = status.data.error ?? "";
             server.address = status.data.address;

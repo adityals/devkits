@@ -1,9 +1,7 @@
 package main
 
 import (
-	"devkits/internal/proxy"
-	"devkits/internal/rule"
-	"devkits/internal/traffic"
+	"devkits/internal/mitm"
 	"embed"
 	"log"
 	"os"
@@ -19,14 +17,6 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
-
-func init() {
-	// Register a custom event whose associated data type is string.
-	// This is not required, but the binding generator will pick up registered events
-	// and provide a strongly typed JS/TS API for them.
-	application.RegisterEvent[proxy.ProxyStatus](proxy.ProxyStatusEventName)
-	application.RegisterEvent[traffic.Summary](traffic.FlowEventName)
-}
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
@@ -53,21 +43,10 @@ func main() {
 		},
 	})
 
-	ruleEngine := rule.NewEngine()
-	recorder := traffic.NewRecorder(app.Event)
-
-	// Registration order is startup order: rules load before the proxy can start.
-	app.RegisterService(application.NewService(rule.NewRuleService(
-		rule.NewFileStore(filepath.Join(home, ".config", "devkits", "proxy_rules")),
-		ruleEngine,
-	)))
-	app.RegisterService(application.NewService(traffic.NewTrafficService(recorder)))
-	app.RegisterService(application.NewService(proxy.NewProxyService(
-		app.Event,
-		":8000",
-		proxy.NewJsEngineAddOn(ruleEngine),
-		proxy.NewRecordAddOn(recorder),
-	)))
+	configDir := filepath.Join(home, ".config", "devkits")
+	for _, s := range mitm.Services(app.Event, configDir) {
+		app.RegisterService(s)
+	}
 
 	// Create a new window with the necessary options.
 	// 'Title' is the title of the window.

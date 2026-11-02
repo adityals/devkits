@@ -10,24 +10,24 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 export function Create(r: $models.Rule): $CancellablePromise<$models.Rule> {
-    return $Call.ByID(2573170897, r);
+    return $Call.ByID(2260883595, r);
 }
 
 export function Delete(id: string): $CancellablePromise<void> {
-    return $Call.ByID(985414422, id);
+    return $Call.ByID(105894088, id);
 }
 
 export function List(): $CancellablePromise<$models.Rule[] | null> {
-    return $Call.ByID(508408749);
+    return $Call.ByID(1432361155);
 }
 
 /**
  * Reload re-reads rules from disk; on error the running rules stay active.
  */
 export function Reload(): $CancellablePromise<void> {
-    return $Call.ByID(2876567432);
+    return $Call.ByID(3618425026);
 }
 
 export function Update(r: $models.Rule): $CancellablePromise<$models.Rule> {
-    return $Call.ByID(1129273408, r);
+    return $Call.ByID(323574106, r);
 }

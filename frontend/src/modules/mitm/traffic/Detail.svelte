@@ -1,8 +1,8 @@
 <script lang="ts">
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import { X } from "@lucide/svelte";
-    import { Get } from "../../../bindings/devkits/internal/traffic/trafficservice";
-    import type { Flow } from "../../../bindings/devkits/internal/traffic";
+    import { Get } from "../../../../bindings/devkits/internal/mitm/traffic/trafficservice";
+    import type { Flow } from "../../../../bindings/devkits/internal/mitm/traffic";
     import MessageView from "./MessageView.svelte";
 
     type Props = {
