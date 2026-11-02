@@ -9,7 +9,7 @@ import (
 )
 
 type RuleMatcher interface {
-	Match(path string) *rule.Script
+	Match(host, path string) *rule.Script
 }
 
 // jsEngineAddOn re-matches on every hook instead of caching per flow:
@@ -85,7 +85,7 @@ func (js *jsEngineAddOn) Response(f *prox.Flow) {
 }
 
 func (js *jsEngineAddOn) match(f *prox.Flow, hook rule.Hook) *rule.Script {
-	s := js.rules.Match(f.Request.URL.Path)
+	s := js.rules.Match(f.Request.URL.Host, f.Request.URL.Path)
 	if s == nil || !s.Has(hook) {
 		return nil
 	}

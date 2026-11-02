@@ -1,17 +1,20 @@
 package rule
 
 import (
+	"log/slog"
 	"sync/atomic"
 	"time"
 )
 
 type ruleSet struct {
 	scripts  []*Script
+	hosts    []hostMatcher
 	matchers []matcher
 }
 
 type Engine struct {
 	timeout time.Duration
+	logger  *slog.Logger
 	active  atomic.Pointer[ruleSet]
 }
 
@@ -23,8 +26,17 @@ func WithTimeout(d time.Duration) Option {
 	}
 }
 
+func WithLogger(l *slog.Logger) Option {
+	return func(e *Engine) {
+		e.logger = l
+	}
+}
+
 func NewEngine(opts ...Option) *Engine {
-	e := &Engine{timeout: DefaultTimeout}
+	e := &Engine{
+		timeout: DefaultTimeout,
+		logger:  slog.Default(),
+	}
 	for _, opt := range opts {
 		opt(e)
 	}
@@ -33,10 +45,10 @@ func NewEngine(opts ...Option) *Engine {
 	return e
 }
 
-// Match returns the best rule for path, or nil. Safe for concurrent use.
-func (e *Engine) Match(path string) *Script {
+// Match returns the best rule for host and path, or nil. Safe for concurrent use.
+func (e *Engine) Match(host, path string) *Script {
 	set := e.active.Load()
-	if i := selectBest(set.matchers, path); i >= 0 {
+	if i := selectRule(set.hosts, set.matchers, host, path); i >= 0 {
 		return set.scripts[i]
 	}
 
@@ -44,7 +56,7 @@ func (e *Engine) Match(path string) *Script {
 }
 
 func (e *Engine) compile(r Rule) (*Script, error) {
-	return compile(r, e.timeout)
+	return compile(r, e.timeout, e.logger)
 }
 
 // build compiles every enabled rule; it is all-or-nothing so a bad rule never half-applies.
@@ -61,6 +73,7 @@ func (e *Engine) build(rules []Rule) (*ruleSet, error) {
 		}
 
 		set.scripts = append(set.scripts, s)
+		set.hosts = append(set.hosts, s.host)
 		set.matchers = append(set.matchers, s.matcher)
 	}
 

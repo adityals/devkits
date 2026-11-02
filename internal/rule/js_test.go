@@ -3,6 +3,7 @@ package rule
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sync"
 	"testing"
@@ -20,7 +21,7 @@ const rule = {
 }`
 
 func TestScriptHooks(t *testing.T) {
-	s, err := compile(Rule{ID: "full", Script: fullScript}, DefaultTimeout)
+	s, err := compile(Rule{ID: "full", Script: fullScript}, DefaultTimeout, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,10 +65,13 @@ func TestCompileRejectsInvalid(t *testing.T) {
 		"hook not fn":    `const rule = { match: '/a', onRequestBody: 1 }`,
 		"no hooks":       `const rule = { match: '/a' }`,
 		"top-level loop": `while (true) {}`,
+		"host number":    `const rule = { host: 1, match: '/a', onRequestHeader() {} }`,
+		"host mixed":     `const rule = { host: ['a.com', 2], match: '/a', onRequestHeader() {} }`,
+		"host pattern":   `const rule = { host: 'a*.com', match: '/a', onRequestHeader() {} }`,
 	}
 	for name, src := range cases {
 		t.Run(name, func(t *testing.T) {
-			if _, err := compile(Rule{ID: "bad", Script: src}, 50*time.Millisecond); err == nil {
+			if _, err := compile(Rule{ID: "bad", Script: src}, 50*time.Millisecond, slog.Default()); err == nil {
 				t.Fatal("expected error")
 			}
 		})
@@ -79,7 +83,7 @@ func TestHookTimeoutKeepsRuntimeUsable(t *testing.T) {
 		match: '/',
 		onRequestBody(b) { if (b === 'loop') { while (true) {} } return b + '!' },
 	}`
-	s, err := compile(Rule{ID: "loop", Script: src}, 50*time.Millisecond)
+	s, err := compile(Rule{ID: "loop", Script: src}, 50*time.Millisecond, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +98,7 @@ func TestHookTimeoutKeepsRuntimeUsable(t *testing.T) {
 }
 
 func TestConcurrentHooks(t *testing.T) {
-	s, err := compile(Rule{ID: "full", Script: fullScript}, DefaultTimeout)
+	s, err := compile(Rule{ID: "full", Script: fullScript}, DefaultTimeout, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}

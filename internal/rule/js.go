@@ -3,6 +3,7 @@ package rule
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"time"
 
@@ -36,14 +37,16 @@ type jsRuntime struct {
 
 type Script struct {
 	id      string
+	host    hostMatcher
 	matcher matcher
 	program *goja.Program
 	timeout time.Duration
+	logger  *slog.Logger
 	has     [hookCount]bool
 	idle    chan *jsRuntime
 }
 
-func compile(r Rule, timeout time.Duration) (*Script, error) {
+func compile(r Rule, timeout time.Duration, logger *slog.Logger) (*Script, error) {
 	prog, err := goja.Compile(r.ID+".js", r.Script, true)
 	if err != nil {
 		return nil, fmt.Errorf("%w: compile: %w", ErrInvalidRule, err)
@@ -53,6 +56,7 @@ func compile(r Rule, timeout time.Duration) (*Script, error) {
 		id:      r.ID,
 		program: prog,
 		timeout: timeout,
+		logger:  logger,
 		idle:    make(chan *jsRuntime, runtime.GOMAXPROCS(0)),
 	}
 	rt, err := s.newRuntime()
@@ -71,6 +75,15 @@ func compile(r Rule, timeout time.Duration) (*Script, error) {
 		return nil, err
 	}
 
+	hosts, ok := stringsProp(rt.this, "host")
+	if !ok {
+		return nil, fmt.Errorf("%w: host must be a string or an array of strings", ErrInvalidRule)
+	}
+
+	if s.host, err = newHostMatcher(hosts); err != nil {
+		return nil, err
+	}
+
 	for i, fn := range rt.hooks {
 		s.has[i] = fn != nil
 	}
@@ -81,6 +94,10 @@ func compile(r Rule, timeout time.Duration) (*Script, error) {
 
 func (s *Script) newRuntime() (*jsRuntime, error) {
 	vm := goja.New()
+	if err := installConsole(vm, s.logger, s.id); err != nil {
+		return nil, fmt.Errorf("install console: %w", err)
+	}
+
 	v, err := s.guard(vm, func() (goja.Value, error) {
 		if _, err := vm.RunProgram(s.program); err != nil {
 			return nil, err
@@ -161,4 +178,31 @@ func stringProp(o *goja.Object, name string) (string, bool) {
 
 	str, ok := v.Export().(string)
 	return str, ok
+}
+
+// stringsProp accepts a string or an array of strings; false means any other type.
+func stringsProp(o *goja.Object, name string) ([]string, bool) {
+	v := o.Get(name)
+	if v == nil || goja.IsUndefined(v) {
+		return nil, true
+	}
+
+	switch x := v.Export().(type) {
+	case string:
+		return []string{x}, true
+	case []any:
+		out := make([]string, 0, len(x))
+		for _, item := range x {
+			str, ok := item.(string)
+			if !ok {
+				return nil, false
+			}
+
+			out = append(out, str)
+		}
+
+		return out, true
+	}
+
+	return nil, false
 }
