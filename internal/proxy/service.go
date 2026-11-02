@@ -22,14 +22,16 @@ type ProxyStatus struct {
 
 type proxyService struct {
 	addr         string
+	addOn        prox.Addon
 	prox         *prox.Proxy
 	eventManager *application.EventManager
 	mu           sync.Mutex
 }
 
-func NewProxyService(addr string) *proxyService {
+func NewProxyService(addr string, addOn prox.Addon) *proxyService {
 	return &proxyService{
-		addr: addr,
+		addr:  addr,
+		addOn: addOn,
 	}
 }
 
@@ -67,6 +69,8 @@ func (ps *proxyService) Start() error {
 		Addr:              ps.addr,
 		StreamLargeBodies: 5 * 1024 * 1024, // 5MB
 	})
+	p.AddAddon(ps.addOn)
+
 	if err != nil {
 		ps.mu.Unlock()
 		return err
