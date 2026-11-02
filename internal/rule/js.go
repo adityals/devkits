@@ -1,77 +1,164 @@
 package rule
 
 import (
+	"errors"
 	"fmt"
-	"log/slog"
-	"strconv"
-	"sync"
+	"runtime"
+	"time"
 
 	"github.com/dop251/goja"
 )
 
+type Hook int
+
 const (
-	exportedSrc = `const exportSrc = (typeof rules !== 'undefined') ? rules : [rule]`
+	HookRequestHeader Hook = iota
+	HookRequestBody
+	HookResponseHeader
+	HookResponseBody
+	hookCount
 )
 
+var hookNames = [hookCount]string{
+	"onRequestHeader",
+	"onRequestBody",
+	"onResponseHeader",
+	"onResponseBody",
+}
+
+var ruleRef = goja.MustCompile("rule-ref", "rule", true)
+
 type jsRuntime struct {
-	vm              *goja.Runtime
-	onRequestHeader []goja.Callable
+	vm    *goja.Runtime
+	this  *goja.Object
+	hooks [hookCount]goja.Callable
 }
 
-type jsRule struct {
-	program  *goja.Program
-	exported *goja.Program
-	pool     sync.Pool
+type Script struct {
+	id      string
+	matcher matcher
+	program *goja.Program
+	timeout time.Duration
+	has     [hookCount]bool
+	idle    chan *jsRuntime
 }
 
-func NewJsRule(name string, content string) (*jsRule, error) {
-	prog, err := goja.Compile(name, content, true)
+func compile(r Rule, timeout time.Duration) (*Script, error) {
+	prog, err := goja.Compile(r.ID+".js", r.Script, true)
 	if err != nil {
-		return nil, fmt.Errorf("new js rule compile: %w", err)
+		return nil, fmt.Errorf("%w: compile: %w", ErrInvalidRule, err)
 	}
 
-	exported, err := goja.Compile("export", exportedSrc, true)
-	if err != nil {
-		return nil, fmt.Errorf("exported js rule compile: %w", err)
+	s := &Script{
+		id:      r.ID,
+		program: prog,
+		timeout: timeout,
+		idle:    make(chan *jsRuntime, runtime.GOMAXPROCS(0)),
 	}
-
-	js := &jsRule{
-		program:  prog,
-		exported: exported,
-	}
-
-	rt, err := js.newRuntime()
+	rt, err := s.newRuntime()
 	if err != nil {
 		return nil, err
 	}
 
-	js.pool.Put(rt)
-	js.pool.New = func() any {
-		rt, err := js.newRuntime()
-		if err != nil { // already validated at startup; shouldn't happen
-			slog.Error("err new pool", err)
-			return nil
-		}
-		return rt
+	mod, okMod := stringProp(rt.this, "modifier")
+	match, okMatch := stringProp(rt.this, "match")
+
+	if !okMod || !okMatch {
+		return nil, fmt.Errorf("%w: modifier and match must be strings", ErrInvalidRule)
 	}
 
-	return js, nil
+	if s.matcher, err = newMatcher(mod, match); err != nil {
+		return nil, err
+	}
+
+	for i, fn := range rt.hooks {
+		s.has[i] = fn != nil
+	}
+
+	s.release(rt)
+	return s, nil
 }
 
-func (j *jsRule) newRuntime() (*jsRuntime, error) {
+func (s *Script) newRuntime() (*jsRuntime, error) {
 	vm := goja.New()
-
-	if _, err := vm.RunProgram(j.program); err != nil {
-		return nil, fmt.Errorf("run script: %w", err)
-	}
-
-	_, err := vm.RunProgram(j.exported)
+	v, err := s.guard(vm, func() (goja.Value, error) {
+		if _, err := vm.RunProgram(s.program); err != nil {
+			return nil, err
+		}
+		return vm.RunProgram(ruleRef)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("script must define rules or rule: %w", err)
+		return nil, fmt.Errorf("%w: script must define `const rule = {...}`: %w", ErrInvalidRule, err)
 	}
 
-	rt := &jsRuntime{
-		vm: vm,
+	obj, ok := v.(*goja.Object)
+	if !ok {
+		return nil, fmt.Errorf("%w: rule must be an object", ErrInvalidRule)
+	}
+
+	rt := &jsRuntime{vm: vm, this: obj}
+	found := false
+	for i, name := range hookNames {
+		hv := obj.Get(name)
+		if hv == nil || goja.IsUndefined(hv) {
+			continue
+		}
+		fn, ok := goja.AssertFunction(hv)
+		if !ok {
+			return nil, fmt.Errorf("%w: %s must be a function", ErrInvalidRule, name)
+		}
+		rt.hooks[i], found = fn, true
+	}
+	if !found {
+		return nil, fmt.Errorf("%w: rule needs at least one of %v", ErrInvalidRule, hookNames)
 	}
 	return rt, nil
+}
+
+func (s *Script) acquire() (*jsRuntime, error) {
+	select {
+	case rt := <-s.idle:
+		return rt, nil
+	default:
+		return s.newRuntime()
+	}
+}
+
+func (s *Script) release(rt *jsRuntime) {
+	select {
+	case s.idle <- rt:
+	default: // idle pool full; drop rt so GC reclaims it
+	}
+}
+
+// guard interrupts the VM after s.timeout and leaves it reusable.
+func (s *Script) guard(vm *goja.Runtime, fn func() (goja.Value, error)) (goja.Value, error) {
+	fired := make(chan struct{})
+	t := time.AfterFunc(s.timeout, func() {
+		vm.Interrupt(ErrScriptTimeout)
+		close(fired)
+	})
+
+	v, err := fn()
+	if !t.Stop() {
+		<-fired
+	}
+
+	vm.ClearInterrupt()
+
+	if _, ok := errors.AsType[*goja.InterruptedError](err); ok {
+		return nil, fmt.Errorf("%w after %s", ErrScriptTimeout, s.timeout)
+	}
+	return v, err
+}
+
+// stringProp reports false only when the property exists and is not a string.
+func stringProp(o *goja.Object, name string) (string, bool) {
+	v := o.Get(name)
+	if v == nil || goja.IsUndefined(v) {
+		return "", true
+	}
+
+	str, ok := v.Export().(string)
+	return str, ok
 }

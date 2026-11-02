@@ -3,6 +3,7 @@ module devkits
 go 1.26.0
 
 require (
+	github.com/dop251/goja v0.0.0-20261031103838-cf2ff0ec0b31
 	github.com/lqqyt2423/go-mitmproxy v1.9.4
 	github.com/wailsapp/wails/v3 v3.0.0
 )
@@ -12,7 +13,6 @@ require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/dlclark/regexp2/v2 v2.11.0 // indirect
-	github.com/dop251/goja v0.0.0-20261031103838-cf2ff0ec0b31 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect

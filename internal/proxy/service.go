@@ -69,13 +69,12 @@ func (ps *proxyService) Start() error {
 		Addr:              ps.addr,
 		StreamLargeBodies: 5 * 1024 * 1024, // 5MB
 	})
-	p.AddAddon(ps.addOn)
-
 	if err != nil {
 		ps.mu.Unlock()
 		return err
 	}
 
+	p.AddAddon(ps.addOn)
 	ps.prox = p
 	ps.eventManager.Emit(ProxyStatusEventName, ProxyStatus{
 		Running: true,

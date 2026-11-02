@@ -2,8 +2,11 @@ package main
 
 import (
 	"devkits/internal/proxy"
+	"devkits/internal/rule"
 	"embed"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -27,7 +30,20 @@ func init() {
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
-	internalProxy := proxy.NewProxyService(":8000")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ruleEngine := rule.NewEngine()
+	ruleService := rule.NewRuleService(
+		rule.NewFileStore(filepath.Join(home, ".config", "devkits", "proxy_rules")),
+		ruleEngine,
+	)
+	internalProxy := proxy.NewProxyService(
+		":8000",
+		proxy.NewJsEngineAddOn(ruleEngine),
+	)
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -38,6 +54,7 @@ func main() {
 		Name:        "DevKits",
 		Description: "Tool kit for development",
 		Services: []application.Service{
+			application.NewService(ruleService),
 			application.NewService(internalProxy),
 		},
 		Assets: application.AssetOptions{
@@ -64,7 +81,7 @@ func main() {
 	})
 
 	// Run the application. This blocks until the application has been exited.
-	err := app.Run()
+	err = app.Run()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {
