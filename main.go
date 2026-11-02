@@ -3,6 +3,7 @@ package main
 import (
 	"devkits/internal/proxy"
 	"devkits/internal/rule"
+	"devkits/internal/traffic"
 	"embed"
 	"log"
 	"os"
@@ -24,6 +25,7 @@ func init() {
 	// This is not required, but the binding generator will pick up registered events
 	// and provide a strongly typed JS/TS API for them.
 	application.RegisterEvent[proxy.ProxyStatus](proxy.ProxyStatusEventName)
+	application.RegisterEvent[traffic.Summary](traffic.FlowEventName)
 }
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
@@ -35,16 +37,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ruleEngine := rule.NewEngine()
-	ruleService := rule.NewRuleService(
-		rule.NewFileStore(filepath.Join(home, ".config", "devkits", "proxy_rules")),
-		ruleEngine,
-	)
-	internalProxy := proxy.NewProxyService(
-		":8000",
-		proxy.NewJsEngineAddOn(ruleEngine),
-	)
-
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -53,10 +45,6 @@ func main() {
 	app := application.New(application.Options{
 		Name:        "DevKits",
 		Description: "Tool kit for development",
-		Services: []application.Service{
-			application.NewService(ruleService),
-			application.NewService(internalProxy),
-		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
@@ -64,6 +52,22 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
+
+	ruleEngine := rule.NewEngine()
+	recorder := traffic.NewRecorder(app.Event)
+
+	// Registration order is startup order: rules load before the proxy can start.
+	app.RegisterService(application.NewService(rule.NewRuleService(
+		rule.NewFileStore(filepath.Join(home, ".config", "devkits", "proxy_rules")),
+		ruleEngine,
+	)))
+	app.RegisterService(application.NewService(traffic.NewTrafficService(recorder)))
+	app.RegisterService(application.NewService(proxy.NewProxyService(
+		app.Event,
+		":8000",
+		proxy.NewJsEngineAddOn(ruleEngine),
+		proxy.NewRecordAddOn(recorder),
+	)))
 
 	// Create a new window with the necessary options.
 	// 'Title' is the title of the window.

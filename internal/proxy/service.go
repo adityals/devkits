@@ -1,13 +1,11 @@
 package proxy
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"sync"
 
 	prox "github.com/lqqyt2423/go-mitmproxy/proxy"
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 const (
@@ -20,24 +18,28 @@ type ProxyStatus struct {
 	Addr    string `json:"address"`
 }
 
+type Emitter interface {
+	Emit(name string, data ...any) bool
+}
+
 type proxyService struct {
-	addr         string
-	addOn        prox.Addon
-	prox         *prox.Proxy
-	eventManager *application.EventManager
-	mu           sync.Mutex
+	emitter Emitter
+	addr    string
+	addOns  []prox.Addon
+	prox    *prox.Proxy
+	mu      sync.Mutex
 }
 
-func NewProxyService(addr string, addOn prox.Addon) *proxyService {
+func NewProxyService(
+	emitter Emitter,
+	addr string,
+	addOns ...prox.Addon,
+) *proxyService {
 	return &proxyService{
-		addr:  addr,
-		addOn: addOn,
+		emitter: emitter,
+		addr:    addr,
+		addOns:  addOns,
 	}
-}
-
-func (ps *proxyService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
-	ps.eventManager = application.Get().Event
-	return nil
 }
 
 func (ps *proxyService) ServiceShutdown() error {
@@ -74,16 +76,19 @@ func (ps *proxyService) Start() error {
 		return err
 	}
 
-	p.AddAddon(ps.addOn)
+	for _, a := range ps.addOns {
+		p.AddAddon(a)
+	}
+
 	ps.prox = p
-	ps.eventManager.Emit(ProxyStatusEventName, ProxyStatus{
+	ps.emitter.Emit(ProxyStatusEventName, ProxyStatus{
 		Running: true,
 		Addr:    ps.addr,
 	})
 	ps.mu.Unlock()
 
 	go func() {
-		err := ps.prox.Start()
+		err := p.Start()
 
 		ps.mu.Lock()
 		if ps.prox == p {
@@ -96,7 +101,7 @@ func (ps *proxyService) Start() error {
 			if !errors.Is(err, http.ErrServerClosed) {
 				errMsg = err.Error()
 			}
-			ps.eventManager.Emit(ProxyStatusEventName, ProxyStatus{
+			ps.emitter.Emit(ProxyStatusEventName, ProxyStatus{
 				Running: false,
 				Error:   errMsg,
 			})

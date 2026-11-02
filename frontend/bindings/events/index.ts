@@ -13,3 +13,8 @@ import "../github.com/wailsapp/wails/v3/internal/eventcreate.js";
  */
 export const ProxyStatus = "proxy:status";
 
+/**
+ * Name of the custom event "traffic:flow".
+ */
+export const TrafficFlow = "traffic:flow";
+
