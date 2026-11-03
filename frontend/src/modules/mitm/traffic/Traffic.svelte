@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import { Ban, Circle, Square } from "@lucide/svelte";
     import { TrafficLog } from "./log.svelte";
-    import Detail from "./Detail.svelte";
 
     const log = new TrafficLog();
     const recordLabel = $derived(log.recording ? "Stop recording" : "Record");
@@ -147,7 +146,16 @@
             </table>
         </div>
         {#if selected}
-            <Detail id={selected} onclose={() => (selected = null)} />
+            {#await import("./Detail.svelte") then { default: Detail }}
+                <Detail
+                    id={selected}
+                    onclose={() => (selected = null)}
+                />
+            {:catch error}
+                <p class="card preset-tonal-error p-3 text-sm">
+                    {String(error)}
+                </p>
+            {/await}
         {/if}
     </div>
 </div>
