@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { Events } from "@wailsio/runtime";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
-    import { ShieldCheck, ShieldOff } from "@lucide/svelte";
+    import { Globe, ShieldCheck, ShieldOff, Unplug } from "@lucide/svelte";
     import {
         Start,
         Stop,
@@ -12,10 +12,32 @@
         Status,
         Use,
     } from "../../../../bindings/devkits/internal/mitm/cert/certservice";
+    import * as SysProxy from "../../../../bindings/devkits/internal/mitm/sysproxy/sysproxyservice";
     import { MitmProxyStatus } from "../../../../bindings/events";
 
     let server = $state({ running: false, error: "", address: "" });
     let ca = $state({ trusted: false, path: "", inProgress: false, error: "" });
+    let sys = $state({ enabled: false, address: "", inProgress: false, error: "" });
+
+    const refreshSys = async () => {
+        const status = await SysProxy.Status();
+        sys.enabled = status.enabled;
+        sys.address = status.address;
+    };
+
+    const toggleSys = async () => {
+        sys.inProgress = true;
+        sys.error = "";
+
+        try {
+            await (sys.enabled ? SysProxy.Disable() : SysProxy.Enable());
+            await refreshSys();
+        } catch (error) {
+            sys.error = String(error);
+        } finally {
+            sys.inProgress = false;
+        }
+    };
 
     const refreshCA = async () => {
         const status = await Status();
@@ -54,11 +76,21 @@
         refreshCA().catch((error) => {
             ca.error = String(error);
         });
+        refreshSys().catch((error) => {
+            sys.error = String(error);
+        });
 
         const unsubProxyStatusEvt = Events.On(MitmProxyStatus, (status) => {
             server.running = status.data.running;
             server.error = status.data.error ?? "";
             server.address = status.data.address;
+
+            // The backend turns the system proxy off when the proxy stops.
+            if (!status.data.running) {
+                refreshSys().catch((error) => {
+                    sys.error = String(error);
+                });
+            }
         });
 
         return () => {
@@ -149,6 +181,49 @@
     {#if ca.error}
         <p class="card preset-tonal-error p-2 text-sm">
             {ca.error}
+        </p>
+    {/if}
+    <div
+        class="border-surface-200-800 flex flex-wrap items-center justify-between gap-3 border-t pt-3"
+    >
+        <div class="flex min-w-0 items-center gap-3">
+            <h2 class="text-sm font-semibold">System Proxy</h2>
+            <span
+                class={[
+                    "badge text-xs",
+                    sys.enabled
+                        ? "preset-tonal-success"
+                        : "preset-tonal-surface",
+                ]}
+            >
+                {sys.enabled ? "On" : "Off"}
+            </span>
+            {#if sys.address}
+                <code class="code truncate text-xs">{sys.address}</code>
+            {/if}
+        </div>
+        <button
+            type="button"
+            class={[
+                "btn btn-sm",
+                sys.enabled ? "preset-tonal-error" : "preset-filled-primary-500",
+            ]}
+            title={server.running ? undefined : "Start the proxy first"}
+            disabled={sys.inProgress || (!sys.enabled && !server.running)}
+            onclick={toggleSys}
+        >
+            {#if sys.enabled}
+                <Unplug size={16} />
+                <span>Disable</span>
+            {:else}
+                <Globe size={16} />
+                <span>Enable</span>
+            {/if}
+        </button>
+    </div>
+    {#if sys.error}
+        <p class="card preset-tonal-error p-2 text-sm">
+            {sys.error}
         </p>
     {/if}
 </section>

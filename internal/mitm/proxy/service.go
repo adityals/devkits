@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -26,6 +27,7 @@ type proxyService struct {
 	emitter Emitter
 	addr    string
 	caDir   string
+	onStop  func(context.Context) error
 	addOns  []prox.Addon
 	prox    *prox.Proxy
 	mu      sync.Mutex
@@ -35,12 +37,14 @@ func NewProxyService(
 	emitter Emitter,
 	addr string,
 	caDir string,
+	onStop func(context.Context) error,
 	addOns ...prox.Addon,
 ) *proxyService {
 	return &proxyService{
 		emitter: emitter,
 		addr:    addr,
 		caDir:   caDir,
+		onStop:  onStop,
 		addOns:  addOns,
 	}
 }
@@ -105,16 +109,18 @@ func (ps *proxyService) Start() error {
 		}
 		ps.mu.Unlock()
 
-		if err != nil {
-			errMsg := ""
-			if !errors.Is(err, http.ErrServerClosed) {
-				errMsg = err.Error()
-			}
-			ps.emitter.Emit(ProxyStatusEventName, ProxyStatus{
-				Running: false,
-				Error:   errMsg,
-			})
+		// Runs on every exit, including crashes, so the device never keeps pointing at a dead proxy.
+		stopErr := ps.onStop(context.Background())
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
 		}
+
+		status := ProxyStatus{Running: false}
+		if err := errors.Join(err, stopErr); err != nil {
+			status.Error = err.Error()
+		}
+
+		ps.emitter.Emit(ProxyStatusEventName, status)
 	}()
 
 	return nil

@@ -13,10 +13,6 @@ func NewTrustStore() TrustStore {
 	return unsupported{}
 }
 
-func (unsupported) Trusted(context.Context, string) (bool, error) {
-	return false, errors.ErrUnsupported
-}
-
 func (unsupported) Trust(context.Context, string) error {
 	return errors.ErrUnsupported
 }

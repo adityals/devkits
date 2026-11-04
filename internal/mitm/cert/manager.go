@@ -2,6 +2,7 @@ package cert
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -11,11 +12,14 @@ import (
 	mcert "github.com/lqqyt2423/go-mitmproxy/cert"
 )
 
-// certFile is the public PEM go-mitmproxy's SelfSignCA writes next to its key.
-const certFile = "mitmproxy-ca-cert.pem"
+const (
+	// certFile is the public PEM go-mitmproxy's SelfSignCA writes next to its key.
+	certFile = "mitmproxy-ca-cert.pem"
+	// probeHost names the test leaf Trusted verifies; any hostname works.
+	probeHost = "devkits.localhost"
+)
 
 type TrustStore interface {
-	Trusted(ctx context.Context, certPath string) (bool, error)
 	Trust(ctx context.Context, certPath string) error
 	Untrust(ctx context.Context, certPath string) error
 }
@@ -49,6 +53,8 @@ func (m *Manager) CertPath() string {
 	return filepath.Join(m.dir, certFile)
 }
 
+// Trusted verifies a leaf the CA issues against the system roots, as browsers do.
+// Verifying the root alone is not enough: macOS accepts a self-signed root on its own.
 func (m *Manager) Trusted(ctx context.Context) (bool, error) {
 	_, err := os.Stat(m.CertPath())
 	if errors.Is(err, fs.ErrNotExist) {
@@ -59,7 +65,24 @@ func (m *Manager) Trusted(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("stat CA cert: %w", err)
 	}
 
-	return m.trust.Trusted(ctx, m.CertPath())
+	ca, err := m.Load()
+	if err != nil {
+		return false, err
+	}
+
+	probe, err := ca.GetCert(probeHost)
+	if err != nil {
+		return false, fmt.Errorf("issue probe cert: %w", err)
+	}
+
+	leaf, err := x509.ParseCertificate(probe.Certificate[0])
+	if err != nil {
+		return false, fmt.Errorf("parse probe cert: %w", err)
+	}
+
+	_, err = leaf.Verify(x509.VerifyOptions{DNSName: probeHost})
+
+	return err == nil, nil
 }
 
 func (m *Manager) Use(ctx context.Context) error {

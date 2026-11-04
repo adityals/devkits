@@ -83,6 +83,12 @@
             placeholder="Filter path"
             bind:value={path}
         />
+        <span
+            class="badge preset-tonal ml-auto self-center whitespace-nowrap tabular-nums"
+            title="Records kept / capacity"
+        >
+            {log.rows.length} / {log.capacity}
+        </span>
     </div>
     {#if log.error}
         <p class="card preset-tonal-error p-3 text-sm">{log.error}</p>

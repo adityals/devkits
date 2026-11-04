@@ -4,13 +4,19 @@ import (
 	"devkits/internal/mitm/cert"
 	"devkits/internal/mitm/proxy"
 	"devkits/internal/mitm/rule"
+	"devkits/internal/mitm/sysproxy"
 	"devkits/internal/mitm/traffic"
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-const proxyAddr = ":8000"
+const (
+	// proxyAddr listens on all interfaces so other devices can use it; the system proxy targets loopback.
+	proxyAddr = ":" + proxyPort
+	proxyHost = "127.0.0.1"
+	proxyPort = "8000"
+)
 
 func init() {
 	application.RegisterEvent[proxy.ProxyStatus](proxy.ProxyStatusEventName)
@@ -25,6 +31,11 @@ func Services(
 	engine := rule.NewEngine()
 	recorder := traffic.NewRecorder(emitter)
 	caDir := filepath.Join(configDir, "ca")
+	sysProxy := sysproxy.NewManager(
+		sysproxy.NewSettings(),
+		proxyHost,
+		proxyPort,
+	)
 
 	return []application.Service{
 		application.NewService(rule.NewRuleService(
@@ -40,8 +51,10 @@ func Services(
 			emitter,
 			proxyAddr,
 			caDir,
+			sysProxy.Release,
 			proxy.NewJsEngineAddOn(engine),
 			proxy.NewRecordAddOn(recorder),
 		)),
+		application.NewService(sysproxy.NewSysProxyService(sysProxy)),
 	}
 }

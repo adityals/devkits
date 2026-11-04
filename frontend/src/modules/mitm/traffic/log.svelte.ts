@@ -28,21 +28,21 @@ export class TrafficLog {
   rows = $state.raw<Row[]>([]);
   error = $state("");
   recording = $state(true);
-  #maxRows = Infinity;
+  capacity = $state(0);
 
   start(): () => void {
     const off = Events.On(MitmTrafficFlow, (event) => {
-      this.rows = [...this.rows, toRow(event.data)].slice(-this.#maxRows);
+      this.rows = this.#trim([...this.rows, toRow(event.data)]);
     });
 
     Promise.all([Capacity(), Recording(), List()])
       .then(([capacity, recording, list]) => {
-        this.#maxRows = capacity;
+        this.capacity = capacity;
         this.recording = recording;
         const live = new Set(this.rows.map((r) => r.id));
         const past = (list ?? []).filter((s) => !live.has(s.id)).map(toRow);
 
-        this.rows = [...past, ...this.rows].slice(-this.#maxRows);
+        this.rows = this.#trim([...past, ...this.rows]);
       })
       .catch(this.#fail);
 
@@ -66,6 +66,10 @@ export class TrafficLog {
       })
       .catch(this.#fail);
   }
+
+  // Before Capacity() resolves, capacity is 0 and rows are kept untrimmed.
+  #trim = (rows: Row[]): Row[] =>
+    this.capacity > 0 ? rows.slice(-this.capacity) : rows;
 
   #fail = (error: unknown): void => {
     this.error = String(error);
