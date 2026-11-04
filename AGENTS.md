@@ -14,9 +14,9 @@ internal/
     <sub>/                      # one package per concern, e.g. mitm/{proxy,rule,traffic,cert}
 frontend/src/
   App.svelte                    # Shell + Router
-  routes.ts                     # one route per module: /<module>
-  routes/<Module>Page.svelte    # one page per module, plus NotFound.svelte
-  layout/Shell.svelte           # navigation rail; add one link per module
+  routes.ts                     # "/" home (eager), plus one lazy route per module: /<module>
+  routes/<Module>Page.svelte    # one page per module, plus HomePage.svelte (module grid; add one entry per module) and NotFound.svelte
+  layout/Shell.svelte           # app bar; brand links home
   lib/components/               # UI shared across modules
   modules/<module>/<sub>/       # module components and .svelte.ts logic, mirrors internal/<module>/<sub>
 ```

@@ -1,6 +1,7 @@
 package mitm
 
 import (
+	"devkits/internal/mitm/cert"
 	"devkits/internal/mitm/proxy"
 	"devkits/internal/mitm/rule"
 	"devkits/internal/mitm/traffic"
@@ -23,6 +24,7 @@ func Services(
 ) []application.Service {
 	engine := rule.NewEngine()
 	recorder := traffic.NewRecorder(emitter)
+	caDir := filepath.Join(configDir, "ca")
 
 	return []application.Service{
 		application.NewService(rule.NewRuleService(
@@ -30,9 +32,14 @@ func Services(
 			engine,
 		)),
 		application.NewService(traffic.NewTrafficService(recorder)),
+		application.NewService(cert.NewCertService(cert.NewManager(
+			caDir,
+			cert.NewTrustStore(),
+		))),
 		application.NewService(proxy.NewProxyService(
 			emitter,
 			proxyAddr,
+			caDir,
 			proxy.NewJsEngineAddOn(engine),
 			proxy.NewRecordAddOn(recorder),
 		)),

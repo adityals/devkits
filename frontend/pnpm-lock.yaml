@@ -11,22 +11,25 @@ importers:
       '@lucide/svelte':
         specifier: ^1.66.0
         version: 1.66.0(svelte@5.57.2)
-      '@wailsio/runtime':
-        specifier: 3.0.0
-        version: 3.0.0
-      js-beautify:
-        specifier: ^2.0.3
-        version: 2.0.3
-      svelte-spa-router:
-        specifier: ^5.1.1
-        version: 5.1.1(svelte@5.57.2)
-    devDependencies:
       '@skeletonlabs/skeleton':
         specifier: ^5.0.1
         version: 5.0.1(tailwindcss@4.3.3)
       '@skeletonlabs/skeleton-svelte':
         specifier: ^5.0.1
         version: 5.0.1(svelte@5.57.2)
+      '@wailsio/runtime':
+        specifier: 3.0.0
+        version: 3.0.0
+      js-beautify:
+        specifier: ^2.0.3
+        version: 2.0.3
+      shiki:
+        specifier: ^4.5.0
+        version: 4.5.0
+      svelte-spa-router:
+        specifier: ^5.1.1
+        version: 5.1.1(svelte@5.57.2)
+    devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.3.1(svelte@5.57.2)(vite@8.3.5(jiti@2.7.0))
@@ -39,9 +42,6 @@ importers:
       '@types/js-beautify':
         specifier: ^1.14.3
         version: 1.14.3
-      shiki:
-        specifier: ^4.5.0
-        version: 4.5.0
       svelte:
         specifier: ^5.46.4
         version: 5.57.2

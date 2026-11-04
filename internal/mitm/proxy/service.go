@@ -25,6 +25,7 @@ type Emitter interface {
 type proxyService struct {
 	emitter Emitter
 	addr    string
+	caDir   string
 	addOns  []prox.Addon
 	prox    *prox.Proxy
 	mu      sync.Mutex
@@ -33,11 +34,13 @@ type proxyService struct {
 func NewProxyService(
 	emitter Emitter,
 	addr string,
+	caDir string,
 	addOns ...prox.Addon,
 ) *proxyService {
 	return &proxyService{
 		emitter: emitter,
 		addr:    addr,
+		caDir:   caDir,
 		addOns:  addOns,
 	}
 }
@@ -64,11 +67,17 @@ func (ps *proxyService) Start() error {
 
 	if ps.prox != nil {
 		ps.mu.Unlock()
+		// Re-emit so a remounted UI, which starts from "stopped", syncs to the running proxy.
+		ps.emitter.Emit(ProxyStatusEventName, ProxyStatus{
+			Running: true,
+			Addr:    ps.addr,
+		})
 		return nil
 	}
 
 	p, err := prox.NewProxy(&prox.Options{
 		Addr:              ps.addr,
+		CaRootPath:        ps.caDir,
 		StreamLargeBodies: 5 * 1024 * 1024, // 5MB
 	})
 	if err != nil {

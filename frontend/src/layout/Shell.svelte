@@ -1,42 +1,26 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import { Navigation } from "@skeletonlabs/skeleton-svelte";
-    import { Network } from "@lucide/svelte";
-    import { router } from "svelte-spa-router";
+    import { AppBar } from "@skeletonlabs/skeleton-svelte";
+    import { Wrench } from "@lucide/svelte";
 
     const { children }: { children: Snippet } = $props();
-
-    const links = [
-        {
-            href: "/mitm",
-            label: "MITM",
-            icon: Network,
-        },
-    ];
 </script>
 
-<div class="grid h-screen grid-cols-[auto_1fr]">
-    <Navigation
-        layout="rail"
-        class="border-surface-200-800 border-r"
-    >
-        <Navigation.Content>
-            <Navigation.Menu>
-                {#each links as link (link.href)}
-                    {@const active = router.location.startsWith(link.href)}
-                    <Navigation.TriggerAnchor
-                        href={`#${link.href}`}
-                        aria-current={active ? "page" : undefined}
-                        class={[active && "preset-tonal-primary"]}
-                    >
-                        <link.icon size={20} />
-                        <Navigation.TriggerText>{link.label}</Navigation.TriggerText>
-                    </Navigation.TriggerAnchor>
-                {/each}
-            </Navigation.Menu>
-        </Navigation.Content>
-    </Navigation>
-    <div class="min-h-0 min-w-0">
+<div class="grid h-screen grid-rows-[auto_1fr]">
+    <AppBar class="border-surface-200-800 border-b">
+        <AppBar.Toolbar class="grid-cols-[auto_1fr]">
+            <AppBar.Lead>
+                <a
+                    href="#/"
+                    class="flex items-center gap-2"
+                >
+                    <Wrench size={20} />
+                    <span class="h6">DevKits</span>
+                </a>
+            </AppBar.Lead>
+        </AppBar.Toolbar>
+    </AppBar>
+    <div class="min-h-0 min-w-0 overflow-auto">
         {@render children()}
     </div>
 </div>

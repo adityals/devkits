@@ -1,14 +1,41 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Events } from "@wailsio/runtime";
-    import { AppBar, Switch } from "@skeletonlabs/skeleton-svelte";
+    import { Switch } from "@skeletonlabs/skeleton-svelte";
+    import { ShieldCheck, ShieldOff } from "@lucide/svelte";
     import {
         Start,
         Stop,
     } from "../../../../bindings/devkits/internal/mitm/proxy/proxyservice";
+    import {
+        Remove,
+        Status,
+        Use,
+    } from "../../../../bindings/devkits/internal/mitm/cert/certservice";
     import { MitmProxyStatus } from "../../../../bindings/events";
 
     let server = $state({ running: false, error: "", address: "" });
+    let ca = $state({ trusted: false, path: "", inProgress: false, error: "" });
+
+    const refreshCA = async () => {
+        const status = await Status();
+        ca.trusted = status.trusted;
+        ca.path = status.path;
+    };
+
+    const toggleCA = async () => {
+        ca.inProgress = true;
+        ca.error = "";
+
+        try {
+            await (ca.trusted ? Remove() : Use());
+            await refreshCA();
+        } catch (error) {
+            ca.error = String(error);
+        } finally {
+            ca.inProgress = false;
+        }
+    };
 
     const handleStartProxyServer = () => {
         Start().catch((error) => {
@@ -24,6 +51,9 @@
 
     onMount(() => {
         handleStartProxyServer();
+        refreshCA().catch((error) => {
+            ca.error = String(error);
+        });
 
         const unsubProxyStatusEvt = Events.On(MitmProxyStatus, (status) => {
             server.running = status.data.running;
@@ -37,17 +67,15 @@
     });
 </script>
 
-<AppBar class="sticky top-0 z-10 border-b border-surface-200-800">
-    <AppBar.Toolbar class="grid-cols-[auto_1fr_auto] items-center">
-        <AppBar.Lead>
+<section class="card preset-outlined-surface-200-800 mx-4 mt-4 space-y-3 p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
             <h1 class="h6">HTTP Proxy</h1>
-        </AppBar.Lead>
-        <AppBar.Headline>
             {#if server.address}
                 <code class="code text-xs">{server.address}</code>
             {/if}
-        </AppBar.Headline>
-        <AppBar.Trail class="items-center gap-3">
+        </div>
+        <div class="flex items-center gap-3">
             <span
                 class={[
                     "badge text-xs",
@@ -74,11 +102,53 @@
                 <Switch.Label class="sr-only">Toggle proxy</Switch.Label>
                 <Switch.HiddenInput />
             </Switch>
-        </AppBar.Trail>
-    </AppBar.Toolbar>
+        </div>
+    </div>
     {#if server.error}
-        <p class="preset-tonal-error px-4 py-2 text-sm">
+        <p class="card preset-tonal-error p-2 text-sm">
             {server.error}
         </p>
     {/if}
-</AppBar>
+    <div
+        class="border-surface-200-800 flex flex-wrap items-center justify-between gap-3 border-t pt-3"
+    >
+        <div class="flex min-w-0 items-center gap-3">
+            <h2 class="text-sm font-semibold">HTTPS CA</h2>
+            <span
+                class={[
+                    "badge text-xs",
+                    ca.trusted
+                        ? "preset-tonal-success"
+                        : "preset-tonal-warning",
+                ]}
+            >
+                {ca.trusted ? "Trusted" : "Untrusted"}
+            </span>
+            {#if ca.path}
+                <code class="code truncate text-xs">{ca.path}</code>
+            {/if}
+        </div>
+        <button
+            type="button"
+            class={[
+                "btn btn-sm",
+                ca.trusted ? "preset-tonal-error" : "preset-filled-primary-500",
+            ]}
+            disabled={ca.inProgress}
+            onclick={toggleCA}
+        >
+            {#if ca.trusted}
+                <ShieldOff size={16} />
+                <span>Remove CA</span>
+            {:else}
+                <ShieldCheck size={16} />
+                <span>Trust CA</span>
+            {/if}
+        </button>
+    </div>
+    {#if ca.error}
+        <p class="card preset-tonal-error p-2 text-sm">
+            {ca.error}
+        </p>
+    {/if}
+</section>
