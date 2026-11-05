@@ -45,6 +45,9 @@ frontend/src/
 ### Svelte (`*.svelte`)
 - Follow Svelte 5 best practices and idiomatic Svelte: runes (`$state`, `$derived`, `$effect`, `$props`), `<script lang="ts">`.
 - Keep components small; move shared logic into `.ts` modules.
+- Inline event handlers stay at most 2 lines inside the braces; longer ones become a named handler in `<script>` (`onclick={() => handleDelete(rule.id)}`).
+- Use `void` only to discard a promise in an expression-bodied arrow (`() => void save()`); inside a braced body, call it plainly.
+- Assign an awaited value before branching on it: `const created = await list.create(id); if (created) {...}`, not `if (await ...)`.
 
 ### UI Design System (Skeleton)
 - All frontend UI follows Skeleton for Svelte. Reference: https://www.skeleton.dev/llms.txt (Svelte docs under `/docs/svelte/`).

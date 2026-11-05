@@ -9,6 +9,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+/**
+ * Capacity is the most rules that may be enabled at once.
+ */
+export function Capacity(): $CancellablePromise<number> {
+    return $Call.ByID(4208780495);
+}
+
 export function Create(r: $models.Rule): $CancellablePromise<$models.Rule> {
     return $Call.ByID(2260883595, r);
 }

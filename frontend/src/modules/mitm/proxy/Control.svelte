@@ -120,11 +120,10 @@
             </span>
             <Switch
                 checked={server.running}
-                onCheckedChange={(detail) => {
+                onCheckedChange={(detail) =>
                     detail.checked
                         ? void handleStartProxyServer()
-                        : void handleStopProxyServer();
-                }}
+                        : void handleStopProxyServer()}
             >
                 <Switch.Control
                     class="data-[state=checked]:preset-filled-success-500"

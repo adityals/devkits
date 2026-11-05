@@ -33,6 +33,11 @@ func (s *ruleService) ServiceStartup(ctx context.Context, options application.Se
 	return nil
 }
 
+// Capacity is the most rules that may be enabled at once.
+func (s *ruleService) Capacity() int {
+	return MaxRules
+}
+
 func (s *ruleService) List() []Rule {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -46,10 +51,6 @@ func (s *ruleService) Create(r Rule) (Rule, error) {
 
 	if s.index(r.ID) >= 0 {
 		return Rule{}, fmt.Errorf("%w: %s", ErrExists, r.ID)
-	}
-
-	if len(s.rules) >= MaxRules {
-		return Rule{}, ErrMaxRules
 	}
 
 	return s.put(append(slices.Clone(s.rules), r), r)
@@ -107,6 +108,11 @@ func (s *ruleService) put(next []Rule, r Rule) (Rule, error) {
 		return Rule{}, err
 	}
 
+	// Refuse to go over the limit, but always allow disabling so the user can get back under it.
+	if r.Enabled && enabledCount(next) > MaxRules {
+		return Rule{}, fmt.Errorf("%w: disable a rule first", ErrMaxRules)
+	}
+
 	if _, err := s.engine.compile(r); err != nil {
 		return Rule{}, err
 	}
@@ -122,8 +128,16 @@ func (s *ruleService) put(next []Rule, r Rule) (Rule, error) {
 }
 
 // apply compiles, persists, then swaps, so a failure leaves memory unchanged.
+// Over the limit, every rule stays listed but none run: picking which ones would be a guess.
 func (s *ruleService) apply(next []Rule, persist func() error) error {
-	set, err := s.engine.build(next)
+	enabled := enabledCount(next)
+
+	active := next
+	if enabled > MaxRules {
+		active = nil
+	}
+
+	set, err := s.engine.build(active)
 	if err != nil {
 		return err
 	}
@@ -135,7 +149,22 @@ func (s *ruleService) apply(next []Rule, persist func() error) error {
 	s.engine.swap(set)
 	s.rules = next
 
+	if enabled > MaxRules {
+		return fmt.Errorf("%w: %d enabled, max %d; all rules are off", ErrMaxRules, enabled, MaxRules)
+	}
+
 	return nil
+}
+
+func enabledCount(rules []Rule) int {
+	n := 0
+	for _, r := range rules {
+		if r.Enabled {
+			n++
+		}
+	}
+
+	return n
 }
 
 func (s *ruleService) index(id string) int {

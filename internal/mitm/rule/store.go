@@ -77,10 +77,6 @@ func (s *FileStore) Load() ([]Rule, error) {
 		})
 	}
 
-	if len(rules) > MaxRules {
-		return nil, fmt.Errorf("%w: %d rule files, max %d", ErrMaxRules, len(rules), MaxRules)
-	}
-
 	slices.SortFunc(rules, func(a, b Rule) int {
 		return strings.Compare(a.ID, b.ID)
 	})

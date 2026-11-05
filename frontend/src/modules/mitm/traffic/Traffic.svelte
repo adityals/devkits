@@ -34,6 +34,12 @@
         return "text-success-500";
     };
 
+    const handleRowKeydown = (event: KeyboardEvent, id: string) => {
+        if (event.key === "Enter") {
+            selected = id;
+        }
+    };
+
     const formatSize = (bytes: number): string =>
         bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
 
@@ -118,11 +124,7 @@
                                 row.id === selected && "preset-tonal-primary",
                             ]}
                             onclick={() => (selected = row.id)}
-                            onkeydown={(e) => {
-                                if (e.key === "Enter") {
-                                    selected = row.id;
-                                }
-                            }}
+                            onkeydown={(e) => handleRowKeydown(e, row.id)}
                         >
                             <td
                                 >{new Date(
