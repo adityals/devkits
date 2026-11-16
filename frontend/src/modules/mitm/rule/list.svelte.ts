@@ -38,6 +38,10 @@ export class RuleList {
     return this.#run(() => Create({ id, enabled: false, script: TEMPLATE }));
   }
 
+  save(rule: Rule, script: string): Promise<boolean> {
+    return this.#run(() => Update({ ...rule, script }));
+  }
+
   remove(id: string): Promise<boolean> {
     return this.#run(() => Delete(id));
   }

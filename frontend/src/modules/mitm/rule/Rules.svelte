@@ -1,13 +1,38 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
-    import { Plus, RefreshCw, Trash } from "@lucide/svelte";
+    import { Plus, RefreshCw, Save, Trash } from "@lucide/svelte";
+    import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
     import { RuleList } from "./list.svelte";
     import { toaster } from "../../../lib/toaster";
 
     const list = new RuleList();
+
     let newId = $state("");
     let confirming = $state<string | null>(null);
+    let selectedId = $state<string | null>(null);
+    let draft = $state("");
+    let editorModule = $state<Promise<typeof import("./RuleEditor.svelte")>>();
+
+    const selected = $derived(list.rules.find((r) => r.id === selectedId));
+    const dirty = $derived(selected !== undefined && draft !== selected.script);
+
+    const handleSelect = (rule: Rule) => {
+        selectedId = rule.id;
+        draft = rule.script;
+        editorModule ??= import("./RuleEditor.svelte");
+    };
+
+    const handleSave = async () => {
+        if (!selected || !dirty) {
+            return;
+        }
+
+        const saved = await list.save(selected, draft);
+        if (saved) {
+            toaster.success({ title: `${selected.id} saved` });
+        }
+    };
 
     const create = async (event: SubmitEvent) => {
         event.preventDefault();
@@ -18,8 +43,14 @@
         }
     };
 
+    // shortcut: a reload keeps unsaved edits and the next save overwrites the disk version; add a conflict prompt if that bites.
     const handleReload = async () => {
+        const wasClean = !dirty;
         const reloaded = await list.load();
+        if (wasClean) {
+            draft = selected?.script ?? "";
+        }
+
         if (reloaded) {
             toaster.success({
                 title: "Rules reloaded",
@@ -45,7 +76,13 @@
 
 <div class="flex h-full flex-col gap-3 pt-3">
     <form class="flex gap-2" onsubmit={create}>
-        <input class="input" placeholder="new-rule-id" bind:value={newId} />
+        <input
+            class="input"
+            type="text"
+            placeholder="new-rule-id"
+            autocapitalize="none"
+            bind:value={newId}
+        />
         <button
             type="submit"
             class="btn preset-filled-primary-500"
@@ -72,45 +109,101 @@
     {#if list.error}
         <p class="card preset-tonal-error p-3 text-sm">{list.error}</p>
     {/if}
-    <ul
-        class="card preset-outlined-surface-200-800 divide-surface-200-800 min-h-0 flex-1 divide-y overflow-auto"
-    >
-        {#each list.rules as rule (rule.id)}
-            <li class="flex items-center gap-3 px-4 py-2">
-                <code class="code flex-1 truncate">{rule.id}</code>
-                <Switch
-                    checked={rule.enabled}
-                    onCheckedChange={() => list.toggle(rule)}
-                >
-                    <Switch.Control
-                        class="data-[state=checked]:preset-filled-success-500"
-                    >
-                        <Switch.Thumb />
-                    </Switch.Control>
-                    <Switch.Label class="sr-only">Enable {rule.id}</Switch.Label
-                    >
-                    <Switch.HiddenInput />
-                </Switch>
-                <button
-                    type="button"
+    <div class="grid min-h-0 flex-1 grid-cols-[18rem_1fr] gap-3">
+        <ul
+            class="card preset-outlined-surface-200-800 divide-surface-200-800 min-h-0 divide-y overflow-auto"
+        >
+            {#each list.rules as rule (rule.id)}
+                <li
                     class={[
-                        "btn btn-sm",
-                        confirming === rule.id
-                            ? "preset-filled-error-500"
-                            : "preset-tonal",
+                        "flex items-center gap-3 px-4 py-2",
+                        selectedId === rule.id && "preset-tonal-primary",
                     ]}
-                    aria-label={`Delete ${rule.id}`}
-                    onclick={() => handleDelete(rule.id)}
-                    onblur={() => (confirming = null)}
                 >
-                    <Trash size={16} />
-                    {#if confirming === rule.id}
-                        <span>Confirm</span>
+                    <button
+                        type="button"
+                        class="flex-1 truncate text-left"
+                        onclick={() => handleSelect(rule)}
+                    >
+                        <code class="code">{rule.id}</code>
+                    </button>
+                    <Switch
+                        checked={rule.enabled}
+                        onCheckedChange={() => list.toggle(rule)}
+                    >
+                        <Switch.Control
+                            class="data-[state=checked]:preset-filled-success-500"
+                        >
+                            <Switch.Thumb />
+                        </Switch.Control>
+                        <Switch.Label class="sr-only"
+                            >Enable {rule.id}</Switch.Label
+                        >
+                        <Switch.HiddenInput />
+                    </Switch>
+                    <button
+                        type="button"
+                        class={[
+                            "btn btn-sm",
+                            confirming === rule.id
+                                ? "preset-filled-error-500"
+                                : "preset-tonal",
+                        ]}
+                        aria-label={`Delete ${rule.id}`}
+                        onclick={() => handleDelete(rule.id)}
+                        onblur={() => (confirming = null)}
+                    >
+                        <Trash size={16} />
+                        {#if confirming === rule.id}
+                            <span>Confirm</span>
+                        {/if}
+                    </button>
+                </li>
+            {:else}
+                <li class="text-surface-600-400 p-4 text-sm">No rules yet.</li>
+            {/each}
+        </ul>
+        <section
+            class="card preset-outlined-surface-200-800 flex min-h-0 flex-col overflow-hidden"
+        >
+            {#if selected}
+                <header
+                    class="border-surface-200-800 flex items-center gap-3 border-b px-4 py-2"
+                >
+                    <code class="code">{selected.id}.js</code>
+                    {#if dirty}
+                        <span class="badge preset-tonal-warning">Unsaved</span>
                     {/if}
-                </button>
-            </li>
-        {:else}
-            <li class="text-surface-600-400 p-4 text-sm">No rules yet.</li>
-        {/each}
-    </ul>
+                    <button
+                        type="button"
+                        class="btn btn-sm preset-filled-primary-500 ml-auto"
+                        disabled={!dirty}
+                        onclick={handleSave}
+                    >
+                        <Save size={16} />
+                        <span>Save</span>
+                    </button>
+                </header>
+                <div class="min-h-0 flex-1">
+                    {#await editorModule then module}
+                        {#if module}
+                            <module.default
+                                value={draft}
+                                onChange={(next) => (draft = next)}
+                                onSave={handleSave}
+                            />
+                        {/if}
+                    {:catch error}
+                        <p class="card preset-tonal-error m-3 p-3 text-sm">
+                            {String(error)}
+                        </p>
+                    {/await}
+                </div>
+            {:else}
+                <p class="text-surface-600-400 p-4 text-sm">
+                    Select a rule to edit it.
+                </p>
+            {/if}
+        </section>
+    </div>
 </div>
