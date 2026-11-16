@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
-    import { Plus, RefreshCw, Save, Trash } from "@lucide/svelte";
+    import { Pencil, Plus, RefreshCw, Save, Trash } from "@lucide/svelte";
     import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
     import { RuleList } from "./list.svelte";
     import { toaster } from "../../../lib/toaster";
@@ -12,6 +12,7 @@
     let confirming = $state<string | null>(null);
     let selectedId = $state<string | null>(null);
     let draft = $state("");
+    let renameId = $state("");
     let editorModule = $state<Promise<typeof import("./RuleEditor.svelte")>>();
 
     const selected = $derived(list.rules.find((r) => r.id === selectedId));
@@ -20,7 +21,23 @@
     const handleSelect = (rule: Rule) => {
         selectedId = rule.id;
         draft = rule.script;
+        renameId = rule.id;
         editorModule ??= import("./RuleEditor.svelte");
+    };
+
+    // Unsaved edits survive a rename: the draft is kept and still compared against the renamed rule's script.
+    const handleRename = async (event: SubmitEvent) => {
+        event.preventDefault();
+
+        if (!selected) {
+            return;
+        }
+
+        const newId = renameId.trim();
+        const renamed = await list.rename(selected.id, newId);
+        if (renamed) {
+            selectedId = newId;
+        }
     };
 
     const handleSave = async () => {
@@ -170,7 +187,29 @@
                 <header
                     class="border-surface-200-800 flex items-center gap-3 border-b px-4 py-2"
                 >
-                    <code class="code">{selected.id}.js</code>
+                    <form
+                        class="flex items-center gap-2"
+                        onsubmit={handleRename}
+                    >
+                        <input
+                            type="text"
+                            autocapitalize="none"
+                            class="input w-48 font-mono text-sm"
+                            aria-label="Rule ID"
+                            bind:value={renameId}
+                        />
+                        <span class="text-surface-600-400 text-sm">.js</span>
+                        {#if renameId.trim() !== selected.id}
+                            <button
+                                type="submit"
+                                class="btn btn-sm preset-tonal"
+                                disabled={renameId.trim() === ""}
+                            >
+                                <Pencil size={16} />
+                                <span>Rename</span>
+                            </button>
+                        {/if}
+                    </form>
                     {#if dirty}
                         <span class="badge preset-tonal-warning">Unsaved</span>
                     {/if}

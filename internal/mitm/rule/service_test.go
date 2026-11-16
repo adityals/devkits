@@ -22,6 +22,10 @@ func (m *memStore) Delete(string) error {
 	return nil
 }
 
+func (m *memStore) Rename(string, string, bool) error {
+	return nil
+}
+
 func TestOverLimitTurnsAllRulesOff(t *testing.T) {
 	store := &memStore{}
 	for i := range MaxRules + 1 {

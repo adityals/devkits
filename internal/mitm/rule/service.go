@@ -87,6 +87,36 @@ func (s *ruleService) Delete(id string) error {
 	})
 }
 
+func (s *ruleService) Rename(oldID, newID string) (Rule, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if err := ValidateID(newID); err != nil {
+		return Rule{}, err
+	}
+
+	i := s.index(oldID)
+	if i < 0 {
+		return Rule{}, fmt.Errorf("%w: %s", ErrNotFound, oldID)
+	}
+
+	if s.index(newID) >= 0 {
+		return Rule{}, fmt.Errorf("%w: %s", ErrExists, newID)
+	}
+
+	next := slices.Clone(s.rules)
+	next[i].ID = newID
+
+	err := s.apply(next, func() error {
+		return s.store.Rename(oldID, newID, next[i].Enabled)
+	})
+	if err != nil {
+		return Rule{}, err
+	}
+
+	return next[i], nil
+}
+
 // Reload re-reads rules from disk; on error the running rules stay active.
 func (s *ruleService) Reload() error {
 	s.mu.Lock()

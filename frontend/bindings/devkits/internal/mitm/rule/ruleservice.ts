@@ -35,6 +35,10 @@ export function Reload(): $CancellablePromise<void> {
     return $Call.ByID(3618425026);
 }
 
+export function Rename(oldID: string, newID: string): $CancellablePromise<$models.Rule> {
+    return $Call.ByID(1281948689, oldID, newID);
+}
+
 export function Update(r: $models.Rule): $CancellablePromise<$models.Rule> {
     return $Call.ByID(323574106, r);
 }

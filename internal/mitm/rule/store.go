@@ -20,6 +20,7 @@ type Store interface {
 	Load() ([]Rule, error)
 	Save(Rule) error
 	Delete(id string) error
+	Rename(oldID, newID string, enabled bool) error
 }
 
 // FileStore keeps one rule per file: <id>.js is enabled, _<id>.js is disabled.
@@ -109,6 +110,28 @@ func (s *FileStore) Delete(id string) error {
 		s.remove(s.path(id, true)),
 		s.remove(s.path(id, false)),
 	)
+}
+
+// Rename moves the rule file and keeps its enabled state; os.Rename would silently overwrite, so it checks first.
+func (s *FileStore) Rename(oldID, newID string, enabled bool) error {
+	if err := ValidateID(newID); err != nil {
+		return err
+	}
+
+	for _, taken := range []string{
+		s.path(newID, true),
+		s.path(newID, false),
+	} {
+		if _, err := os.Lstat(taken); err == nil {
+			return fmt.Errorf("%w: %s", ErrExists, filepath.Base(taken))
+		}
+	}
+
+	if err := os.Rename(s.path(oldID, enabled), s.path(newID, enabled)); err != nil {
+		return fmt.Errorf("rename rule %s: %w", oldID, err)
+	}
+
+	return nil
 }
 
 func (s *FileStore) path(id string, enabled bool) string {

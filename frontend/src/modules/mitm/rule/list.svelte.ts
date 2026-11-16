@@ -4,6 +4,7 @@ import {
   Delete,
   List,
   Reload,
+  Rename,
   Update,
 } from "../../../../bindings/devkits/internal/mitm/rule/ruleservice";
 import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
@@ -40,6 +41,10 @@ export class RuleList {
 
   save(rule: Rule, script: string): Promise<boolean> {
     return this.#run(() => Update({ ...rule, script }));
+  }
+
+  rename(oldId: string, newId: string): Promise<boolean> {
+    return this.#run(() => Rename(oldId, newId));
   }
 
   remove(id: string): Promise<boolean> {
