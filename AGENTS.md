@@ -19,6 +19,7 @@ frontend/src/
   layout/Shell.svelte           # app bar; brand links home
   lib/components/               # UI shared across modules
   modules/<module>/<sub>/       # module components and .svelte.ts logic, mirrors internal/<module>/<sub>
+docs/<module>.md                # user docs for one module; README.md lists each module with a one-line link
 ```
 
 - Modules never import each other. Shared code goes in `lib/` (frontend) or a specifically named `internal/` package once two modules need it; never `utils`/`common`.
