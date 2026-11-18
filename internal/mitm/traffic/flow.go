@@ -23,6 +23,7 @@ type Summary struct {
 	DurationMs int64     `json:"durationMs"`
 	Size       int       `json:"size"`
 	Error      string    `json:"error,omitempty"`
+	Rule       string    `json:"rule,omitempty"`
 }
 
 type Message struct {

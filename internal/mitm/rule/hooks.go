@@ -12,6 +12,10 @@ type HooksFlow struct {
 	URL *url.URL
 }
 
+func (s *Script) ID() string {
+	return s.id
+}
+
 func (s *Script) Has(h Hook) bool { return s.has[h] }
 
 func (s *Script) OnRequestHeader(f HooksFlow, h http.Header) error {

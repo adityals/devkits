@@ -1,12 +1,14 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Ban, Circle, Square } from "@lucide/svelte";
+    import { Switch } from "@skeletonlabs/skeleton-svelte";
     import { TrafficLog } from "./log.svelte";
 
     const log = new TrafficLog();
     const recordLabel = $derived(log.recording ? "Stop recording" : "Record");
     let host = $state("");
     let path = $state("");
+    let matchedOnly = $state(false);
     let selected = $state<string | null>(null);
 
     const rows = $derived.by(() => {
@@ -17,7 +19,8 @@
             .filter(
                 (r) =>
                     r.host.toLowerCase().includes(h) &&
-                    r.path.toLowerCase().includes(p),
+                    r.path.toLowerCase().includes(p) &&
+                    (!matchedOnly || Boolean(r.rule)),
             )
             .toReversed();
     });
@@ -89,6 +92,19 @@
             placeholder="Filter path"
             bind:value={path}
         />
+        <Switch
+            class="shrink-0"
+            checked={matchedOnly}
+            onCheckedChange={(details) => (matchedOnly = details.checked)}
+        >
+            <Switch.Control
+                class="data-[state=checked]:preset-filled-primary-500"
+            >
+                <Switch.Thumb />
+            </Switch.Control>
+            <Switch.Label class="text-sm whitespace-nowrap">Matched</Switch.Label>
+            <Switch.HiddenInput />
+        </Switch>
         <span
             class="badge preset-tonal ml-auto self-center whitespace-nowrap tabular-nums"
             title="Records kept / capacity"
@@ -109,6 +125,7 @@
                         <th>Status</th>
                         <th>Host</th>
                         <th>Path</th>
+                        <th>Rule</th>
                         <th class="text-right">Duration</th>
                         <th class="text-right">Size</th>
                     </tr>
@@ -137,13 +154,18 @@
                             </td>
                             <td>{row.host}</td>
                             <td class="max-w-md truncate">{row.path}</td>
+                            <td>
+                                {#if row.rule}
+                                    <code class="code">{row.rule}</code>
+                                {/if}
+                            </td>
                             <td class="text-right">{row.durationMs} ms</td>
                             <td class="text-right">{formatSize(row.size)}</td>
                         </tr>
                     {:else}
                         <tr>
                             <td
-                                colspan="7"
+                                colspan="8"
                                 class="text-surface-600-400 text-center"
                             >
                                 No traffic recorded

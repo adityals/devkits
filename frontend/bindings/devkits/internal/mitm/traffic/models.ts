@@ -27,4 +27,5 @@ export interface Summary {
     "durationMs": number;
     "size": number;
     "error"?: string;
+    "rule"?: string;
 }

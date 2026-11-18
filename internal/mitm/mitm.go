@@ -53,7 +53,10 @@ func Services(
 			caDir,
 			sysProxy.Release,
 			proxy.NewJsEngineAddOn(engine),
-			proxy.NewRecordAddOn(recorder),
+			proxy.NewRecordAddOn(
+				recorder,
+				engine,
+			),
 		)),
 		application.NewService(sysproxy.NewSysProxyService(sysProxy)),
 	}

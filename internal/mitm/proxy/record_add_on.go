@@ -16,12 +16,25 @@ type FlowSink interface {
 // recordAddOn snapshots a flow once go-mitmproxy finishes it, so streamed and failed flows are recorded too.
 type recordAddOn struct {
 	prox.BaseAddon
-	sink     FlowSink
-	failures sync.Map
+	sink    FlowSink
+	rules   RuleMatcher
+	pending sync.Map
 }
 
-func NewRecordAddOn(sink FlowSink) *recordAddOn {
-	return &recordAddOn{sink: sink}
+// pendingFlow holds what is known before the flow ends.
+type pendingFlow struct {
+	rule string
+	err  string
+}
+
+func NewRecordAddOn(
+	sink FlowSink,
+	rules RuleMatcher,
+) *recordAddOn {
+	return &recordAddOn{
+		sink:  sink,
+		rules: rules,
+	}
 }
 
 // Requestheaders decides once per flow, so toggling mid-flow never half-records it.
@@ -30,8 +43,13 @@ func (ra *recordAddOn) Requestheaders(f *prox.Flow) {
 		return
 	}
 
+	var p pendingFlow
+	if s := ra.rules.Match(f.Request.URL.Host, f.Request.URL.Path); s != nil {
+		p.rule = s.ID()
+	}
+
 	// Register the flow so RequestError only stores errors the snapshot goroutine will delete.
-	ra.failures.Store(f.Id, "")
+	ra.pending.Store(f.Id, p)
 	go func() {
 		<-f.Done()
 		ra.sink.Add(ra.snapshot(f))
@@ -39,9 +57,14 @@ func (ra *recordAddOn) Requestheaders(f *prox.Flow) {
 }
 
 func (ra *recordAddOn) RequestError(f *prox.Flow, err error) {
-	if _, ok := ra.failures.Load(f.Id); ok {
-		ra.failures.Store(f.Id, err.Error())
+	v, ok := ra.pending.Load(f.Id)
+	if !ok {
+		return
 	}
+
+	p := v.(pendingFlow)
+	p.err = err.Error()
+	ra.pending.Store(f.Id, p)
 }
 
 func (ra *recordAddOn) snapshot(f *prox.Flow) traffic.Flow {
@@ -59,8 +82,10 @@ func (ra *recordAddOn) snapshot(f *prox.Flow) traffic.Flow {
 			f.Stream,
 		),
 	}
-	if msg, _ := ra.failures.LoadAndDelete(f.Id); msg != nil {
-		out.Summary.Error = msg.(string)
+	if v, ok := ra.pending.LoadAndDelete(f.Id); ok {
+		p := v.(pendingFlow)
+		out.Summary.Rule = p.rule
+		out.Summary.Error = p.err
 	}
 
 	if f.Response == nil {
