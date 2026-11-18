@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Network } from "@lucide/svelte";
+    import { Braces, Network } from "@lucide/svelte";
 
     const modules = [
         {
@@ -7,6 +7,12 @@
             label: "MITM Proxy",
             description: "Record HTTP traffic and rewrite it with JS rules.",
             icon: Network,
+        },
+        {
+            href: "/typegen",
+            label: "Type Generator",
+            description: "Convert data and schemas into typed code.",
+            icon: Braces,
         },
     ];
 </script>
