@@ -84,6 +84,7 @@
             class="input w-40"
             aria-label="Type name"
             placeholder="Type name"
+            autocapitalize="none"
             bind:value={converter.typeName}
         />
         {#if converter.to === "go"}
