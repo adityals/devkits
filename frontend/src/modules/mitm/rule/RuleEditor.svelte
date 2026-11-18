@@ -2,7 +2,11 @@
     import { untrack } from "svelte";
     import type { PrismEditor } from "prism-code-editor";
     import { basicEditor } from "prism-code-editor/setups";
+    import { autoComplete, fuzzyFilter } from "prism-code-editor/autocomplete";
+    import autocompleteStyles from "prism-code-editor/autocomplete.css?inline";
+    import autocompleteIcons from "prism-code-editor/autocomplete-icons.css?inline";
     import "prism-code-editor/prism/languages/javascript";
+    import "./completions";
 
     type Props = {
         value: string;
@@ -26,6 +30,12 @@
             value: untrack(() => value),
             onUpdate: (next) => onChange(next),
         });
+        editor.addExtensions(autoComplete({ filter: fuzzyFilter }));
+
+        // basicEditor renders in a shadow root, so page-level CSS never reaches the popup.
+        const style = document.createElement("style");
+        style.textContent = autocompleteStyles + autocompleteIcons;
+        node.shadowRoot?.append(style);
 
         return () => editor?.remove();
     };
