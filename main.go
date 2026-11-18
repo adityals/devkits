@@ -5,7 +5,9 @@ import (
 	"embed"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -62,6 +64,21 @@ func main() {
 		BackgroundColour: application.NewRGB(6, 7, 15),
 		URL:              "/",
 	})
+
+	// Wails desktop ignores signals, so Ctrl+C would exit without ServiceShutdown and leave the system proxy on.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(
+		sig,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+
+	go func() {
+		<-sig
+		// Stop first so a second Ctrl+C still force-kills a hung shutdown.
+		signal.Stop(sig)
+		app.Quit()
+	}()
 
 	// Run the application. This blocks until the application has been exited.
 	err = app.Run()
