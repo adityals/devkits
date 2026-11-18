@@ -39,6 +39,11 @@ tasks:
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  test:
+    summary: Runs Go tests
+    cmds:
+      - go test {{.CLI_ARGS | default "./internal/..."}}
+
   install:msix:tools:
     summary: Installs tools required for Windows MSIX packaging
     cmds:

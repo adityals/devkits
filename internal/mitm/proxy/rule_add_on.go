@@ -29,7 +29,7 @@ func (js *jsEngineAddOn) Requestheaders(f *prox.Flow) {
 		return
 	}
 
-	if err := s.OnRequestHeader(f.Request.Header); err != nil {
+	if err := s.OnRequestHeader(flowOf(f), f.Request.Header); err != nil {
 		slog.Warn("js rule request header", "url", f.Request.URL, "err", err)
 	}
 }
@@ -40,7 +40,7 @@ func (js *jsEngineAddOn) Request(f *prox.Flow) {
 		return
 	}
 
-	body, ok, err := s.OnRequestBody(f.Request.Body)
+	body, ok, err := s.OnRequestBody(flowOf(f), f.Request.Body)
 	if err != nil {
 		slog.Warn("js rule request body", "url", f.Request.URL, "err", err)
 		return
@@ -58,7 +58,7 @@ func (js *jsEngineAddOn) Responseheaders(f *prox.Flow) {
 		return
 	}
 
-	if err := s.OnResponseHeader(f.Response.Header); err != nil {
+	if err := s.OnResponseHeader(flowOf(f), f.Response.Header); err != nil {
 		slog.Warn("js rule response header", "url", f.Request.URL, "err", err)
 	}
 }
@@ -72,7 +72,7 @@ func (js *jsEngineAddOn) Response(f *prox.Flow) {
 
 	f.Response.ReplaceToDecodedBody()
 
-	body, ok, err := s.OnResponseBody(f.Response.Body)
+	body, ok, err := s.OnResponseBody(flowOf(f), f.Response.Body)
 	if err != nil {
 		slog.Warn("js rule response body", "url", f.Request.URL, "err", err)
 		return
@@ -91,4 +91,8 @@ func (js *jsEngineAddOn) match(f *prox.Flow, hook rule.Hook) *rule.Script {
 	}
 
 	return s
+}
+
+func flowOf(f *prox.Flow) rule.HooksFlow {
+	return rule.HooksFlow{URL: f.Request.URL}
 }

@@ -11,8 +11,10 @@ import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
 
 const TEMPLATE = `const rule = {
   match: "/",
-  onRequestHeader(h) {},
-  onResponseHeader(h) {},
+  onRequestHeader(flow, h) {},
+  onResponseHeader(flow, h) {},
+  onRequestBody(flow, body) {},
+  onResponseBody(flow, body) {},
 };
 `;
 

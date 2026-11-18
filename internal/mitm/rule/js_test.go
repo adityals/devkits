@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -14,10 +15,10 @@ const fullScript = `
 const rule = {
 	modifier: '=',
 	match: '/foo',
-	onRequestHeader(h) { h.set('X-Req', 'yes'); h.del('X-Drop') },
-	onRequestBody(body) { return body.toUpperCase() },
-	onResponseHeader(h) { h.add('X-Res', h.get('X-Base') + '!') },
-	onResponseBody(body) { return undefined },
+	onRequestHeader(f, h) { h.set('X-Req', 'yes'); h.del('X-Drop') },
+	onRequestBody(f, body) { return body.toUpperCase() },
+	onResponseHeader(f, h) { h.add('X-Res', h.get('X-Base') + '!') },
+	onResponseBody(f, body) { return undefined },
 }`
 
 func TestScriptHooks(t *testing.T) {
@@ -34,11 +35,12 @@ func TestScriptHooks(t *testing.T) {
 		"X-Drop": {"1"},
 		"X-Base": {"b"},
 	}
-	if err := s.OnRequestHeader(h); err != nil {
+
+	if err := s.OnRequestHeader(HooksFlow{URL: &url.URL{Host: "testing.com"}}, h); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := s.OnResponseHeader(h); err != nil {
+	if err := s.OnResponseHeader(HooksFlow{URL: &url.URL{Host: "testing.com"}}, h); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,13 +48,57 @@ func TestScriptHooks(t *testing.T) {
 		t.Fatalf("headers not modified: %v", h)
 	}
 
-	body, ok, err := s.OnRequestBody([]byte("abc"))
+	body, ok, err := s.OnRequestBody(HooksFlow{}, []byte("abc"))
 	if err != nil || !ok || string(body) != "ABC" {
 		t.Fatalf("request body = %q, %v, %v", body, ok, err)
 	}
 
-	if _, ok, err := s.OnResponseBody([]byte("abc")); err != nil || ok {
+	if _, ok, err := s.OnResponseBody(HooksFlow{}, []byte("abc")); err != nil || ok {
 		t.Fatalf("undefined return must keep body: %v, %v", ok, err)
+	}
+}
+
+func TestFlow(t *testing.T) {
+	src := `const rule = {
+		match: '/',
+		onRequestHeader(f, h) {
+			h.set('X-Host', f.host)
+			h.set('X-Path', f.path)
+			h.set('X-Url', f.url)
+			h.set('X-Query', f.query.q[0])
+		},
+		onResponseHeader(f, h) { h.set('X-Res-Host', f.host) },
+	}`
+	s, err := compile(Rule{ID: "flow", Script: src}, DefaultTimeout, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := url.Parse("https://api.testing.com:8443/v1/items?q=go&q=js")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := http.Header{}
+	if err := s.OnRequestHeader(HooksFlow{URL: u}, h); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.OnResponseHeader(HooksFlow{URL: u}, h); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"X-Host":     "api.testing.com:8443",
+		"X-Path":     "/v1/items",
+		"X-Url":      "https://api.testing.com:8443/v1/items?q=go&q=js",
+		"X-Query":    "go",
+		"X-Res-Host": "api.testing.com:8443",
+	}
+	for k, v := range want {
+		if got := h.Get(k); got != v {
+			t.Errorf("%s = %q, want %q", k, got, v)
+		}
 	}
 }
 
@@ -81,18 +127,18 @@ func TestCompileRejectsInvalid(t *testing.T) {
 func TestHookTimeoutKeepsRuntimeUsable(t *testing.T) {
 	src := `const rule = {
 		match: '/',
-		onRequestBody(b) { if (b === 'loop') { while (true) {} } return b + '!' },
+		onRequestBody(f, b) { if (b === 'loop') { while (true) {} } return b + '!' },
 	}`
 	s, err := compile(Rule{ID: "loop", Script: src}, 50*time.Millisecond, slog.Default())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, _, err := s.OnRequestBody([]byte("loop")); !errors.Is(err, ErrScriptTimeout) {
+	if _, _, err := s.OnRequestBody(HooksFlow{}, []byte("loop")); !errors.Is(err, ErrScriptTimeout) {
 		t.Fatalf("want ErrScriptTimeout, got %v", err)
 	}
 
-	if body, _, err := s.OnRequestBody([]byte("ok")); err != nil || string(body) != "ok!" {
+	if body, _, err := s.OnRequestBody(HooksFlow{}, []byte("ok")); err != nil || string(body) != "ok!" {
 		t.Fatalf("runtime unusable after timeout: %q, %v", body, err)
 	}
 }
@@ -107,12 +153,12 @@ func TestConcurrentHooks(t *testing.T) {
 	for i := range 50 {
 		wg.Go(func() {
 			want := fmt.Sprintf("BODY-%d", i)
-			out, _, err := s.OnRequestBody(fmt.Appendf(nil, "body-%d", i))
+			out, _, err := s.OnRequestBody(HooksFlow{}, fmt.Appendf(nil, "body-%d", i))
 			if err != nil || string(out) != want {
 				t.Errorf("got %q, %v, want %q", out, err, want)
 			}
 
-			if err := s.OnRequestHeader(http.Header{}); err != nil {
+			if err := s.OnRequestHeader(HooksFlow{URL: &url.URL{Host: "testing.com"}}, http.Header{}); err != nil {
 				t.Error(err)
 			}
 		})

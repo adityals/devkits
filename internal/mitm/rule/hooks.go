@@ -3,34 +3,34 @@ package rule
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/dop251/goja"
 )
 
-type hooksFlow struct {
-	Host string
-	Url  string
+type HooksFlow struct {
+	URL *url.URL
 }
 
 func (s *Script) Has(h Hook) bool { return s.has[h] }
 
-func (s *Script) OnRequestHeader(h http.Header) error {
-	return s.callHeader(HookRequestHeader, h)
+func (s *Script) OnRequestHeader(f HooksFlow, h http.Header) error {
+	return s.callHeader(HookRequestHeader, f, h)
 }
 
-func (s *Script) OnResponseHeader(h http.Header) error {
-	return s.callHeader(HookResponseHeader, h)
+func (s *Script) OnResponseHeader(f HooksFlow, h http.Header) error {
+	return s.callHeader(HookResponseHeader, f, h)
 }
 
-func (s *Script) OnRequestBody(b []byte) ([]byte, bool, error) {
-	return s.callBody(HookRequestBody, b)
+func (s *Script) OnRequestBody(f HooksFlow, b []byte) ([]byte, bool, error) {
+	return s.callBody(HookRequestBody, f, b)
 }
 
-func (s *Script) OnResponseBody(b []byte) ([]byte, bool, error) {
-	return s.callBody(HookResponseBody, b)
+func (s *Script) OnResponseBody(f HooksFlow, b []byte) ([]byte, bool, error) {
+	return s.callBody(HookResponseBody, f, b)
 }
 
-func (s *Script) callHeader(hook Hook, h http.Header) error {
+func (s *Script) callHeader(hook Hook, f HooksFlow, h http.Header) error {
 	if !s.has[hook] {
 		return nil
 	}
@@ -42,7 +42,7 @@ func (s *Script) callHeader(hook Hook, h http.Header) error {
 	defer s.release(rt)
 
 	_, err = s.guard(rt.vm, func() (goja.Value, error) {
-		return rt.hooks[hook](rt.this, headerObject(rt.vm, h))
+		return rt.hooks[hook](rt.this, flowObject(rt.vm, f), headerObject(rt.vm, h))
 	})
 	if err != nil {
 		return fmt.Errorf("rule %s %s: %w", s.id, hookNames[hook], err)
@@ -51,7 +51,7 @@ func (s *Script) callHeader(hook Hook, h http.Header) error {
 }
 
 // callBody returns the replacement body and true when the hook returned a string.
-func (s *Script) callBody(hook Hook, b []byte) ([]byte, bool, error) {
+func (s *Script) callBody(hook Hook, f HooksFlow, b []byte) ([]byte, bool, error) {
 	if !s.has[hook] {
 		return nil, false, nil
 	}
@@ -63,7 +63,7 @@ func (s *Script) callBody(hook Hook, b []byte) ([]byte, bool, error) {
 	defer s.release(rt)
 
 	v, err := s.guard(rt.vm, func() (goja.Value, error) {
-		return rt.hooks[hook](rt.this, rt.vm.ToValue(string(b)))
+		return rt.hooks[hook](rt.this, flowObject(rt.vm, f), rt.vm.ToValue(string(b)))
 	})
 	if err != nil {
 		return nil, false, fmt.Errorf("rule %s %s: %w", s.id, hookNames[hook], err)
@@ -93,5 +93,19 @@ func headerObject(vm *goja.Runtime, h http.Header) *goja.Object {
 	_ = o.Set("set", h.Set)
 	_ = o.Set("add", h.Add)
 	_ = o.Set("del", h.Del)
+	return o
+}
+
+func flowObject(vm *goja.Runtime, f HooksFlow) *goja.Object {
+	u := f.URL
+	if u == nil {
+		u = &url.URL{}
+	}
+
+	o := vm.NewObject()
+	_ = o.Set("host", u.Host)
+	_ = o.Set("url", u.String())
+	_ = o.Set("path", u.Path)
+	_ = o.Set("query", map[string][]string(u.Query()))
 	return o
 }
