@@ -7,6 +7,11 @@ import (
 	"github.com/dop251/goja"
 )
 
+type hooksFlow struct {
+	Host string
+	Url  string
+}
+
 func (s *Script) Has(h Hook) bool { return s.has[h] }
 
 func (s *Script) OnRequestHeader(h http.Header) error {
@@ -81,6 +86,9 @@ func headerObject(vm *goja.Runtime, h http.Header) *goja.Object {
 	_ = o.Set("get", h.Get)
 	_ = o.Set("values", func(k string) []string {
 		return append([]string(nil), h.Values(k)...)
+	})
+	_ = o.Set("toObject", func() http.Header {
+		return h.Clone()
 	})
 	_ = o.Set("set", h.Set)
 	_ = o.Set("add", h.Add)
