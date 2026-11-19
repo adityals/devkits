@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
+    import Loading from "../lib/components/Loading.svelte";
     import Control from "../modules/mitm/proxy/Control.svelte";
     import Traffic from "../modules/mitm/traffic/Traffic.svelte";
 
@@ -42,7 +43,9 @@
             {#each Object.entries(lazyTabs) as [value, tab] (value)}
                 <Tabs.Content {value} class="min-h-0 flex-1">
                     {#if visited[value]}
-                        {#await tab.load() then { default: Panel }}
+                        {#await tab.load()}
+                            <Loading class="p-3" />
+                        {:then { default: Panel }}
                             <Panel />
                         {:catch error}
                             <p class="card preset-tonal-error p-3 text-sm">

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "svelte-core-bestpractices": {
+      "source": "sveltejs/ai-tools",
+      "commit": "f9d22f2f7f7cd5e4596eef5d108a69ac8f0dd48d",
+      "sourceType": "github",
+      "skillPath": "tools/skills/svelte-core-bestpractices/SKILL.md",
+      "computedHash": "32070b91f54f92dba3f6e1739d82bf944c14e7a4a75cfe609a59bf1117c34338"
+    }
+  }
+}

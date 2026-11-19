@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { Ban, Circle, Square } from "@lucide/svelte";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
+    import Loading from "../../../lib/components/Loading.svelte";
     import { TrafficLog } from "./log.svelte";
 
     const log = new TrafficLog();
@@ -10,6 +11,7 @@
     let path = $state("");
     let matchedOnly = $state(false);
     let selected = $state<string | null>(null);
+    let detailModule = $state<Promise<typeof import("./Detail.svelte")>>();
 
     const rows = $derived.by(() => {
         const h = host.trim().toLowerCase();
@@ -37,9 +39,14 @@
         return "text-success-500";
     };
 
+    const handleSelect = (id: string) => {
+        selected = id;
+        detailModule ??= import("./Detail.svelte");
+    };
+
     const handleRowKeydown = (event: KeyboardEvent, id: string) => {
         if (event.key === "Enter") {
-            selected = id;
+            handleSelect(id);
         }
     };
 
@@ -140,7 +147,7 @@
                                 "cursor-pointer",
                                 row.id === selected && "preset-tonal-primary",
                             ]}
-                            onclick={() => (selected = row.id)}
+                            onclick={() => handleSelect(row.id)}
                             onkeydown={(e) => handleRowKeydown(e, row.id)}
                         >
                             <td
@@ -176,11 +183,15 @@
             </table>
         </div>
         {#if selected}
-            {#await import("./Detail.svelte") then { default: Detail }}
-                <Detail
-                    id={selected}
-                    onclose={() => (selected = null)}
-                />
+            {#await detailModule}
+                <Loading class="p-3" />
+            {:then module}
+                {#if module}
+                    <module.default
+                        id={selected}
+                        onclose={() => (selected = null)}
+                    />
+                {/if}
             {:catch error}
                 <p class="card preset-tonal-error p-3 text-sm">
                     {String(error)}

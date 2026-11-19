@@ -12,7 +12,7 @@
 
     const { id, onclose }: Props = $props();
 
-    let flow = $state<Flow | null>(null);
+    let flow = $state.raw<Flow | null>(null);
     let error = $state("");
 
     $effect(() => {

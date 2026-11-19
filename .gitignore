@@ -1,4 +1,6 @@
 .task
+.agents
+.claude
 bin
 node_modules/
 frontend/dist

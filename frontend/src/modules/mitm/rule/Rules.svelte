@@ -5,6 +5,7 @@
     import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
     import { RuleList } from "./list.svelte";
     import { toaster } from "../../../lib/toaster";
+    import Loading from "../../../lib/components/Loading.svelte";
 
     const list = new RuleList();
 
@@ -224,7 +225,9 @@
                     </button>
                 </header>
                 <div class="min-h-0 flex-1">
-                    {#await editorModule then module}
+                    {#await editorModule}
+                        <Loading class="p-3" />
+                    {:then module}
                         {#if module}
                             <module.default
                                 value={draft}
