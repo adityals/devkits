@@ -2,6 +2,7 @@ package main
 
 import (
 	"devkits/internal/mitm"
+	"devkits/internal/typegen"
 	"embed"
 	"log"
 	"os"
@@ -47,6 +48,10 @@ func main() {
 
 	configDir := filepath.Join(home, ".config", "devkits")
 	for _, s := range mitm.Services(app.Event, configDir) {
+		app.RegisterService(s)
+	}
+
+	for _, s := range typegen.Services() {
 		app.RegisterService(s)
 	}
 
