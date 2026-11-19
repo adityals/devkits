@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ArrowRight, Copy } from "@lucide/svelte";
+    import "prism-code-editor/prism/languages/go";
     import "prism-code-editor/prism/languages/json";
     import CodeBlock, {
         type Lang as BlockLang,
@@ -80,13 +81,15 @@
                 <option value={lang}>{labels[lang]}</option>
             {/each}
         </select>
-        <input
-            class="input w-40"
-            aria-label="Type name"
-            placeholder="Type name"
-            autocapitalize="none"
-            bind:value={converter.typeName}
-        />
+        {#if converter.from === "json"}
+            <input
+                class="input w-40"
+                aria-label="Type name"
+                placeholder="Type name"
+                autocapitalize="none"
+                bind:value={converter.typeName}
+            />
+        {/if}
         {#if converter.to === "go"}
             <input
                 class="input w-32"
@@ -120,11 +123,14 @@
             onpaste={() => (pasted = true)}
             role="presentation"
         >
-            <CodeEditor
-                value={converter.input}
-                language={converter.from}
-                onChange={handleChange}
-            />
+            <!-- CodeEditor reads language once, so rebuild it when the source changes. -->
+            {#key converter.from}
+                <CodeEditor
+                    value={converter.input}
+                    language={converter.from}
+                    onChange={handleChange}
+                />
+            {/key}
         </div>
         {#if converter.error}
             <p class="card preset-tonal-error h-fit p-3 text-sm">

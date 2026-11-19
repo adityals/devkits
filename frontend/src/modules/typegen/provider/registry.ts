@@ -1,11 +1,14 @@
+import { BackendProvider } from "./backend";
 import { QuicktypeProvider } from "./quicktype";
 import type { ConvertOptions, Lang, Provider, Route } from "./types";
 
 const quicktype = new QuicktypeProvider();
+const backend = new BackendProvider();
 
 export const routes: Partial<Record<Route, Provider>> = {
   json_go: quicktype,
   json_ts: quicktype,
+  go_ts: backend,
 };
 
 const pairs = (Object.keys(routes) as Route[]).map(
