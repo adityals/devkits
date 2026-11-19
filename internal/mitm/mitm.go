@@ -15,7 +15,7 @@ const (
 	// proxyAddr listens on all interfaces so other devices can use it; the system proxy targets loopback.
 	proxyAddr = ":" + proxyPort
 	proxyHost = "127.0.0.1"
-	proxyPort = "8000"
+	proxyPort = "39080"
 )
 
 func init() {
