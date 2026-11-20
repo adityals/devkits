@@ -102,16 +102,19 @@
             type="button"
             class="btn preset-filled-primary-500"
             title="Convert (⌘/Ctrl+Enter)"
+            disabled={converter.loading}
             onclick={() => converter.run()}
         >
-            Convert
+            {converter.loading ? "Converting..." : "Convert"}
         </button>
         <button
             type="button"
             class="btn-icon preset-tonal ml-auto"
             aria-label="Copy output"
             title="Copy output"
-            disabled={!converter.output || Boolean(converter.error)}
+            disabled={!converter.output ||
+                Boolean(converter.error) ||
+                converter.loading}
             onclick={handleCopy}
         >
             <Copy size={16} />

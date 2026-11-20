@@ -5,6 +5,7 @@ export class Converter {
   input = $state("");
   output = $state("");
   error = $state("");
+  loading = $state(false);
   from = $state<Lang>(sources[0]);
   to = $state<Lang>(targetsFor(sources[0])[0]);
   typeName = $state("Root");
@@ -19,7 +20,7 @@ export class Converter {
       return;
     }
 
-    // Only the newest run may write, so a slow run can't overwrite a newer result.
+    this.loading = true;
     const run = ++this.#latest;
     try {
       const output = await convert(this.input, this.from, this.to, {
@@ -35,6 +36,8 @@ export class Converter {
       if (run === this.#latest) {
         this.error = err instanceof Error ? err.message : String(err);
       }
+    } finally {
+      this.loading = false;
     }
   }
 }
