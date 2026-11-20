@@ -109,7 +109,9 @@
             >
                 <Switch.Thumb />
             </Switch.Control>
-            <Switch.Label class="text-sm whitespace-nowrap">Matched</Switch.Label>
+            <Switch.Label class="text-sm whitespace-nowrap"
+                >Matched</Switch.Label
+            >
             <Switch.HiddenInput />
         </Switch>
         <span

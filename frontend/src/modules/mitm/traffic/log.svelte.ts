@@ -68,8 +68,7 @@ export class TrafficLog {
   }
 
   // Before Capacity() resolves, capacity is 0 and rows are kept untrimmed.
-  #trim = (rows: Row[]): Row[] =>
-    this.capacity > 0 ? rows.slice(-this.capacity) : rows;
+  #trim = (rows: Row[]): Row[] => (this.capacity > 0 ? rows.slice(-this.capacity) : rows);
 
   #fail = (error: unknown): void => {
     this.error = String(error);

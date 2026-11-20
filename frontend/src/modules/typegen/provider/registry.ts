@@ -11,9 +11,7 @@ export const routes: Partial<Record<Route, Provider>> = {
   go_ts: backend,
 };
 
-const pairs = (Object.keys(routes) as Route[]).map(
-  (route) => route.split("_") as [Lang, Lang],
-);
+const pairs = (Object.keys(routes) as Route[]).map((route) => route.split("_") as [Lang, Lang]);
 
 export const sources: Lang[] = [...new Set(pairs.map(([from]) => from))];
 

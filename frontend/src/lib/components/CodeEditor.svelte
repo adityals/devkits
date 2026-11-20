@@ -12,12 +12,7 @@
         setup?: (editor: PrismEditor, root: ShadowRoot) => void;
     };
 
-    const {
-        value,
-        language,
-        onChange,
-        setup,
-    }: Props = $props();
+    const { value, language, onChange, setup }: Props = $props();
     let editor = $state.raw<PrismEditor>();
 
     // shortcut: theme is picked once from the OS setting, add a listener if live switching matters.
@@ -53,7 +48,4 @@
     });
 </script>
 
-<div
-    class="grid h-full min-h-0 overflow-auto"
-    {@attach editorComponent}
-></div>
+<div class="grid h-full min-h-0 overflow-auto" {@attach editorComponent}></div>

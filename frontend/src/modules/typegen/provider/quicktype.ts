@@ -7,21 +7,14 @@ const targets: Partial<Record<Lang, LanguageName>> = {
 };
 
 export class QuicktypeProvider implements Provider {
-  async convert(
-    input: string,
-    from: Lang,
-    to: Lang,
-    opts: ConvertOptions,
-  ): Promise<string> {
+  async convert(input: string, from: Lang, to: Lang, opts: ConvertOptions): Promise<string> {
     const lang = targets[to];
     if (from !== "json" || !lang) {
       throw new Error(`quicktype: unsupported ${from} → ${to}`);
     }
 
     // Lazy: quicktype-core is ~4 MB and only this page needs it.
-    const { InputData, jsonInputForTargetLanguage, quicktype } = await import(
-      "quicktype-core"
-    );
+    const { InputData, jsonInputForTargetLanguage, quicktype } = await import("quicktype-core");
 
     const jsonInput = jsonInputForTargetLanguage(lang);
     await jsonInput.addSource({

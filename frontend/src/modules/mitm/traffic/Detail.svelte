@@ -59,25 +59,16 @@
     {#if error}
         <p class="preset-tonal-error p-3 text-sm">{error}</p>
     {:else if flow}
-        <Tabs
-            defaultValue="response"
-            class="flex min-h-0 flex-1 flex-col p-3"
-        >
+        <Tabs defaultValue="response" class="flex min-h-0 flex-1 flex-col p-3">
             <Tabs.List>
                 <Tabs.Trigger value="request">Request</Tabs.Trigger>
                 <Tabs.Trigger value="response">Response</Tabs.Trigger>
                 <Tabs.Indicator />
             </Tabs.List>
-            <Tabs.Content
-                value="request"
-                class="min-h-0 flex-1 overflow-auto"
-            >
+            <Tabs.Content value="request" class="min-h-0 flex-1 overflow-auto">
                 <MessageView message={flow.request} />
             </Tabs.Content>
-            <Tabs.Content
-                value="response"
-                class="min-h-0 flex-1 overflow-auto"
-            >
+            <Tabs.Content value="response" class="min-h-0 flex-1 overflow-auto">
                 {#if flow.response}
                     <MessageView message={flow.response} />
                 {:else}

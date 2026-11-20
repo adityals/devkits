@@ -17,7 +17,12 @@
 
     let server = $state({ running: false, error: "", address: "" });
     let ca = $state({ trusted: false, path: "", inProgress: false, error: "" });
-    let sys = $state({ enabled: false, address: "", inProgress: false, error: "" });
+    let sys = $state({
+        enabled: false,
+        address: "",
+        inProgress: false,
+        error: "",
+    });
 
     const refreshSys = async () => {
         const status = await SysProxy.Status();
@@ -205,7 +210,9 @@
             type="button"
             class={[
                 "btn btn-sm",
-                sys.enabled ? "preset-tonal-error" : "preset-filled-primary-500",
+                sys.enabled
+                    ? "preset-tonal-error"
+                    : "preset-filled-primary-500",
             ]}
             title={server.running ? undefined : "Start the proxy first"}
             disabled={sys.inProgress || (!sys.enabled && !server.running)}

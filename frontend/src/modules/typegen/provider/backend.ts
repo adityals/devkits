@@ -8,21 +8,13 @@ const langs: Partial<Record<Lang, BackendLang>> = {
 };
 
 export class BackendProvider implements Provider {
-  async convert(
-    input: string,
-    from: Lang,
-    to: Lang,
-  ): Promise<string> {
+  async convert(input: string, from: Lang, to: Lang): Promise<string> {
     const source = langs[from];
     const target = langs[to];
     if (!source || !target) {
       throw new Error(`backend: unsupported ${from} → ${to}`);
     }
 
-    return Convert(
-      source,
-      target,
-      input,
-    );
+    return Convert(source, target, input);
   }
 }

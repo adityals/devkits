@@ -28,11 +28,7 @@ const members: Record<string, Completion[]> = {
   ],
 };
 
-const hook = (
-  name: string,
-  args: string,
-  returns: string,
-): Completion => {
+const hook = (name: string, args: string, returns: string): Completion => {
   const insert = `${name}(${args}) {},`;
 
   return {
@@ -60,8 +56,7 @@ const ruleSource: CompletionSource<JSContext> = ({ path, pos }) => {
     return null;
   }
 
-  const options =
-    path.length === 1 ? ruleKeys : members[path.slice(0, -1).join(".")];
+  const options = path.length === 1 ? ruleKeys : members[path.slice(0, -1).join(".")];
   if (!options) {
     return null;
   }

@@ -46,11 +46,7 @@
         class?: string;
     };
 
-    const {
-        code,
-        lang = "text",
-        class: className = "",
-    }: Props = $props();
+    const { code, lang = "text", class: className = "" }: Props = $props();
 </script>
 
 <div

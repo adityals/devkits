@@ -32,11 +32,7 @@
     };
 </script>
 
-<div
-    class="h-full min-h-0"
-    onkeydown={handleKeydown}
-    role="presentation"
->
+<div class="h-full min-h-0" onkeydown={handleKeydown} role="presentation">
     <CodeEditor
         {value}
         language="javascript"

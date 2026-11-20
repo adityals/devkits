@@ -8,10 +8,5 @@ export type ConvertOptions = {
 };
 
 export interface Provider {
-  convert(
-    input: string,
-    from: Lang,
-    to: Lang,
-    opts: ConvertOptions,
-  ): Promise<string>;
+  convert(input: string, from: Lang, to: Lang, opts: ConvertOptions): Promise<string>;
 }
