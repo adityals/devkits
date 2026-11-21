@@ -10,18 +10,22 @@ export class Converter {
   to = $state<Lang>(targetsFor(sources[0])[0]);
   typeName = $state("Root");
   goPackage = $state("main");
+
   targets = $derived(targetsFor(this.from));
+
   #latest = 0;
 
   async run(): Promise<void> {
+    const run = ++this.#latest;
+
     if (!this.input.trim()) {
       this.output = "";
       this.error = "";
+      this.loading = false;
       return;
     }
 
     this.loading = true;
-    const run = ++this.#latest;
     try {
       const output = await convert(this.input, this.from, this.to, {
         typeName: this.typeName,
@@ -37,7 +41,9 @@ export class Converter {
         this.error = err instanceof Error ? err.message : String(err);
       }
     } finally {
-      this.loading = false;
+      if (run === this.#latest) {
+        this.loading = false;
+      }
     }
   }
 }

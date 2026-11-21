@@ -14,12 +14,27 @@
     let selectedId = $state<string | null>(null);
     let draft = $state("");
     let renameId = $state("");
+    let discarding = $state<string | null>(null);
     let editorModule = $state<Promise<typeof import("./RuleEditor.svelte")>>();
 
     const selected = $derived(list.rules.find((r) => r.id === selectedId));
     const dirty = $derived(selected !== undefined && draft !== selected.script);
 
     const handleSelect = (rule: Rule) => {
+        if (rule.id === selectedId) {
+            return;
+        }
+
+        if (dirty && discarding !== rule.id) {
+            discarding = rule.id;
+            toaster.warning({
+                title: "Unsaved changes",
+                description: `Save ${selectedId}, or click ${rule.id} again to discard.`,
+            });
+            return;
+        }
+
+        discarding = null;
         selectedId = rule.id;
         draft = rule.script;
         renameId = rule.id;
@@ -48,6 +63,7 @@
 
         const saved = await list.save(selected, draft);
         if (saved) {
+            discarding = null;
             toaster.success({ title: `${selected.id} saved` });
         }
     };
