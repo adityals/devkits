@@ -1,12 +1,13 @@
+<script lang="ts" module>
+    let autoStarted = false;
+</script>
+
 <script lang="ts">
     import { onMount } from "svelte";
     import { Events } from "@wailsio/runtime";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
     import { Globe, ShieldCheck, ShieldOff, Unplug } from "@lucide/svelte";
-    import {
-        Start,
-        Stop,
-    } from "../../../../bindings/devkits/internal/mitm/proxy/proxyservice";
+    import * as Proxy from "../../../../bindings/devkits/internal/mitm/proxy/proxyservice";
     import {
         Remove,
         Status,
@@ -65,19 +66,32 @@
     };
 
     const handleStartProxyServer = () => {
-        Start().catch((error) => {
+        Proxy.Start().catch((error) => {
             server.error = String(error);
         });
     };
 
     const handleStopProxyServer = () => {
-        Stop().catch((error) => {
+        Proxy.Stop().catch((error) => {
             server.error = String(error);
         });
     };
 
+    const syncServer = async () => {
+        const status = await Proxy.Status();
+        server.running = status.running;
+        server.address = status.address;
+
+        if (!autoStarted) {
+            autoStarted = true;
+            handleStartProxyServer();
+        }
+    };
+
     onMount(() => {
-        handleStartProxyServer();
+        syncServer().catch((error) => {
+            server.error = String(error);
+        });
         refreshCA().catch((error) => {
             ca.error = String(error);
         });
@@ -90,7 +104,6 @@
             server.error = status.data.error ?? "";
             server.address = status.data.address;
 
-            // The backend turns the system proxy off when the proxy stops.
             if (!status.data.running) {
                 refreshSys().catch((error) => {
                     sys.error = String(error);

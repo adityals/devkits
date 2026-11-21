@@ -48,8 +48,15 @@
     };
 
     const handleCopy = async () => {
-        await navigator.clipboard.writeText(converter.output);
-        toaster.success({ title: "Copied" });
+        try {
+            await navigator.clipboard.writeText(converter.output);
+            toaster.success({ title: "Copied" });
+        } catch (error) {
+            toaster.error({
+                title: "Copy failed",
+                description: String(error),
+            });
+        }
     };
 </script>
 

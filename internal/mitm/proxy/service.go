@@ -53,6 +53,20 @@ func (ps *proxyService) ServiceShutdown() error {
 	return ps.Stop()
 }
 
+func (ps *proxyService) Status() ProxyStatus {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	if ps.prox == nil {
+		return ProxyStatus{Running: false}
+	}
+
+	return ProxyStatus{
+		Running: true,
+		Addr:    ps.addr,
+	}
+}
+
 func (ps *proxyService) Stop() error {
 	ps.mu.Lock()
 	p := ps.prox
@@ -71,11 +85,6 @@ func (ps *proxyService) Start() error {
 
 	if ps.prox != nil {
 		ps.mu.Unlock()
-		// Re-emit so a remounted UI, which starts from "stopped", syncs to the running proxy.
-		ps.emitter.Emit(ProxyStatusEventName, ProxyStatus{
-			Running: true,
-			Addr:    ps.addr,
-		})
 		return nil
 	}
 
