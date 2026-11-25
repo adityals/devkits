@@ -29,3 +29,7 @@ frontend/src/modules/    # module components and logic
 ```
 
 See `AGENTS.md` for conventions.
+
+## License
+
+[MIT](LICENSE)
