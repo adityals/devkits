@@ -1,16 +1,7 @@
 <script lang="ts" module>
     import { createHighlighterCore } from "shiki/core";
     import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
-
-    export type Lang =
-        | "css"
-        | "go"
-        | "html"
-        | "javascript"
-        | "json"
-        | "typescript"
-        | "xml"
-        | "text";
+    import type { Lang } from "./types";
 
     // Highlighting runs on the UI thread, so large bodies render as plain text.
     const MAX_HIGHLIGHT = 100_000;

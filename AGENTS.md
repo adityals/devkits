@@ -17,7 +17,7 @@ frontend/src/
   routes.ts                     # "/" home (eager), plus one lazy route per module: /<module>
   routes/<Module>Page.svelte    # one page per module, plus HomePage.svelte (module grid; add one entry per module) and NotFound.svelte
   layout/Shell.svelte           # app bar; brand links home
-  lib/components/               # UI shared across modules
+  lib/components/<Name>/        # UI shared across modules: <Name>.svelte, plus types.ts for its exported types
   modules/<module>/<sub>/       # module components and .svelte.ts logic, mirrors internal/<module>/<sub>
 docs/<module>.md                # user docs for one module; README.md lists each module with a one-line link
 ```
@@ -46,6 +46,7 @@ docs/<module>.md                # user docs for one module; README.md lists each
 ### Svelte (`*.svelte`)
 - Follow Svelte 5 best practices and idiomatic Svelte: runes (`$state`, `$derived`, `$effect`, `$props`), `<script lang="ts">`.
 - Keep components small; move shared logic into `.ts` modules.
+- Never import types from a `.svelte` file. Put exported types in a sibling `types.ts` (`lib/components/CodeBlock/types.ts`).
 - Inline event handlers stay at most 2 lines inside the braces; longer ones become a named handler in `<script>` (`onclick={() => handleDelete(rule.id)}`).
 - Use `void` only to discard a promise in an expression-bodied arrow (`() => void save()`); inside a braced body, call it plainly.
 - Assign an awaited value before branching on it: `const created = await list.create(id); if (created) {...}`, not `if (await ...)`.

@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { Ban, Circle, Square } from "@lucide/svelte";
     import { Switch } from "@skeletonlabs/skeleton-svelte";
-    import Loading from "../../../lib/components/Loading.svelte";
+    import Loading from "../../../lib/components/Loading/Loading.svelte";
     import { TrafficLog } from "./log.svelte";
 
     const log = new TrafficLog();

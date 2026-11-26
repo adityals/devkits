@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import Loading from "../lib/components/Loading.svelte";
+    import Loading from "../lib/components/Loading/Loading.svelte";
     import Control from "../modules/mitm/proxy/Control.svelte";
     import Traffic from "../modules/mitm/traffic/Traffic.svelte";
 

@@ -4,7 +4,7 @@
     import autocompleteStyles from "prism-code-editor/autocomplete.css?inline";
     import autocompleteIcons from "prism-code-editor/autocomplete-icons.css?inline";
     import "prism-code-editor/prism/languages/javascript";
-    import CodeEditor from "../../../lib/components/CodeEditor.svelte";
+    import CodeEditor from "../../../lib/components/CodeEditor/CodeEditor.svelte";
     import "./completions";
 
     type Props = {

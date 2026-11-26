@@ -2,7 +2,7 @@
     import type { Snippet } from "svelte";
     import { AppBar } from "@skeletonlabs/skeleton-svelte";
     import { Wrench } from "@lucide/svelte";
-    import Toaster from "../lib/components/Toaster.svelte";
+    import Toaster from "../lib/components/Toaster/Toaster.svelte";
 
     const { children }: { children: Snippet } = $props();
 </script>

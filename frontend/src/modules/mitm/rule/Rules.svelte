@@ -5,7 +5,7 @@
     import type { Rule } from "../../../../bindings/devkits/internal/mitm/rule";
     import { RuleList } from "./list.svelte";
     import { toaster } from "../../../lib/toaster";
-    import Loading from "../../../lib/components/Loading.svelte";
+    import Loading from "../../../lib/components/Loading/Loading.svelte";
 
     const list = new RuleList();
 

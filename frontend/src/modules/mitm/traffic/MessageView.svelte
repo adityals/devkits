@@ -1,5 +1,5 @@
 <script lang="ts">
-    import CodeBlock from "../../../lib/components/CodeBlock.svelte";
+    import CodeBlock from "../../../lib/components/CodeBlock/CodeBlock.svelte";
     import type { Message } from "../../../../bindings/devkits/internal/mitm/traffic";
     import { formatBody, headerValue, langFor } from "./content-type";
 

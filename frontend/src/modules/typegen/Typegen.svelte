@@ -2,10 +2,9 @@
     import { ArrowRight, Copy } from "@lucide/svelte";
     import "prism-code-editor/prism/languages/go";
     import "prism-code-editor/prism/languages/json";
-    import CodeBlock, {
-        type Lang as BlockLang,
-    } from "../../lib/components/CodeBlock.svelte";
-    import CodeEditor from "../../lib/components/CodeEditor.svelte";
+    import CodeBlock from "../../lib/components/CodeBlock/CodeBlock.svelte";
+    import type { Lang as BlockLang } from "../../lib/components/CodeBlock/types";
+    import CodeEditor from "../../lib/components/CodeEditor/CodeEditor.svelte";
     import { toaster } from "../../lib/toaster";
     import { Converter } from "./converter.svelte";
     import { sources } from "./provider/registry";
